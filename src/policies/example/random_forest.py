@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #  -*- coding: utf-8 -*-
-__author__ = 'limin'
 
 import pandas as pd
 import datetime
@@ -36,14 +35,19 @@ def get_prediction_data(klines, n):
     return x_train, y_train, x_predict
 
 
-def random_forest(auth, symbol):
+def random_forest(auth, symbol, backtest):
+    """
+    随机森林策略
+    input:
+        auth:       账户信息
+        symbol:     合约代码
+        backtest:   回测对象
+    """
     print("start random_forest")
 
     symbol = "DCE.i2301" if not symbol else symbol  # 交易合约代码
     close_hour, close_minute = 14, 50  # 预定收盘时间(因为真实收盘后无法进行交易, 所以提前设定收盘时间)
     predictions = []  # 用于记录每次的预测结果(在每个交易日收盘时用收盘数据预测下一交易日的涨跌,并记录在此列表里)
-    backtest = TqBacktest(start_dt=datetime.date(
-        2022, 7, 2), end_dt=datetime.date(2022, 9, 1))
     api = TqApi(backtest=backtest, auth=auth)
     quote = api.get_quote(symbol)
     klines = api.get_kline_serial(symbol, duration_seconds=24 * 60 * 60)  # 日线
