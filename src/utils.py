@@ -10,4 +10,4 @@ def getConfig():
     with open(configFilePath, 'r') as stream:
         config = yaml.safe_load(stream)
         # {'auth': {'username': 'xxxx', 'pass': 'xxxxx'}}
-        return config
+        return config['account']

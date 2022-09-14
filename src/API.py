@@ -1,12 +1,9 @@
-from tqsdk import TqApi, TqAuth
 from utils import getConfig
+from tqsdk import TqApi, TqAuth
+
 
 class API:
-
-    def __init__(self):
-        self.api = self.getAPI()
-
-    def getAPI(self):
-        config = getConfig()['auth']
-        return TqApi(auth=TqAuth(config['username'], config['pass']))
-
+    def __init__(self, account: str = 'a1'):
+        self.config = getConfig()[account]
+        self.auth = TqAuth(self.config['username'], self.config['pass'])
+        self.api = TqApi(auth=self.auth)

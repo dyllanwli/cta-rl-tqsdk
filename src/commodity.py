@@ -5,7 +5,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Commodity:
     def __init__(self):
-        self.filePath = os.path.join(DIR, "config-commodity.yaml")
+        self.filePath = os.path.join(DIR, "commodity.yaml")
         self.commodityConfig = self.loadCommodityConfig(self.filePath)
 
     def loadCommodityConfig(self, filePath: str):

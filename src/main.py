@@ -1,16 +1,22 @@
 from API import API
 from commodity import Commodity
-
+from policies.policy import Policy
 
 def main():
-    api = API().api
+    tqAPI = API()
+    api  = tqAPI.api
+    auth = tqAPI.auth
     cmod = Commodity()
+    symbol = cmod.getCommodityConfig('铁矿石') + "2301"
 
-    symbol = cmod.getCommodityConfig('铁矿石')
-    quote = api.get_quote(symbol + "2301")
-    while True:
-        api.wait_update()
-        print(quote)
+    policy = Policy()
+
+    policy.load_policy('random_forest')(auth, symbol)
+
+    # quote = api.get_quote(symbol)
+    # while True:
+    #     api.wait_update()
+    #     print(quote)
 
 
 
