@@ -13,27 +13,6 @@ pd.set_option('display.width', None)  # 设置Pandas显示的宽度
 
 
 
-def get_prediction_data(klines, n):
-    """获取用于随机森林的n个输入数据(n为数据长度): n天中每天的特征参数及其涨跌情况"""
-    close_prices = klines.close[- 30 -
-                                n:]  # 获取本交易日及以前的收盘价(此时在预定的收盘时间: 认为本交易日已收盘)
-    # 计算所需指标
-    sma_data = sma(close_prices, 30, 0.02)[-n:]  # SMA指标, 函数默认时间周期参数:30
-    wma_data = ema2(close_prices, 30)[-n:]  # WMA指标
-    mom_data = trma(close_prices, 30)[-n:]  # MOM指标
-    x_all = list(zip(sma_data, wma_data, mom_data))  # 样本特征组
-    y_all = list(klines.close.iloc[i] >= klines.close.iloc[i - 1]
-                 for i in list(reversed(range(-1, -n - 1, -1))))  # 样本标签组
-    # x_all:            大前天指标 前天指标 昨天指标 (今天指标)
-    # y_all:   (大前天)    前天     昨天    今天      -明天-
-    # 准备算法需要用到的数据
-    x_train = x_all[: -1]  # 训练数据: 特征
-    x_predict = x_all[-1]  # 预测数据(用本交易日的指标预测下一交易日的涨跌)
-    # 训练数据: 标签 (去掉第一个数据后让其与指标隔一位对齐(例如: 昨天的特征 -> 对应预测今天的涨跌标签))
-    y_train = y_all[1:]
-
-    return x_train, y_train, x_predict
-
 
 def random_forest(auth, symbol, backtest):
     """
@@ -45,7 +24,29 @@ def random_forest(auth, symbol, backtest):
     """
     print("start random_forest")
 
-    symbol = "DCE.i2301" if not symbol else symbol  # 交易合约代码
+
+    def get_prediction_data(klines, n):
+        """获取用于随机森林的n个输入数据(n为数据长度): n天中每天的特征参数及其涨跌情况"""
+        close_prices = klines.close[- 30 -
+                                    n:]  # 获取本交易日及以前的收盘价(此时在预定的收盘时间: 认为本交易日已收盘)
+        # 计算所需指标
+        sma_data = sma(close_prices, 30, 0.02)[-n:]  # SMA指标, 函数默认时间周期参数:30
+        wma_data = ema2(close_prices, 30)[-n:]  # WMA指标
+        mom_data = trma(close_prices, 30)[-n:]  # MOM指标
+        x_all = list(zip(sma_data, wma_data, mom_data))  # 样本特征组
+        y_all = list(klines.close.iloc[i] >= klines.close.iloc[i - 1]
+                    for i in list(reversed(range(-1, -n - 1, -1))))  # 样本标签组
+        # x_all:            大前天指标 前天指标 昨天指标 (今天指标)
+        # y_all:   (大前天)    前天     昨天    今天      -明天-
+        # 准备算法需要用到的数据
+        x_train = x_all[: -1]  # 训练数据: 特征
+        x_predict = x_all[-1]  # 预测数据(用本交易日的指标预测下一交易日的涨跌)
+        # 训练数据: 标签 (去掉第一个数据后让其与指标隔一位对齐(例如: 昨天的特征 -> 对应预测今天的涨跌标签))
+        y_train = y_all[1:]
+
+        return x_train, y_train, x_predict
+
+    symbol = symbol  # 交易合约代码
     close_hour, close_minute = 14, 50  # 预定收盘时间(因为真实收盘后无法进行交易, 所以提前设定收盘时间)
     predictions = []  # 用于记录每次的预测结果(在每个交易日收盘时用收盘数据预测下一交易日的涨跌,并记录在此列表里)
     api = TqApi(backtest=backtest, auth=auth)

@@ -11,3 +11,15 @@ def getConfig():
         config = yaml.safe_load(stream)
         # {'auth': {'username': 'xxxx', 'pass': 'xxxxx'}}
         return config['account']
+
+
+
+def getTradingTime(quote):
+    """
+    quote: quote object
+    """
+    # Get trading time
+    tradingTime = quote['trading_time']
+    day = tradingTime['day']
+    night = tradingTime['night']
+    return day, night

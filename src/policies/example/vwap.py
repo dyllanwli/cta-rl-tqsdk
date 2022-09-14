@@ -15,6 +15,7 @@ def vwap(api: TqApi, symbol: str):
     TARGET_VOLUME = 10  # 目标交易手数 (>0: 多头, <0: 空头)
     SYMBOL = symbol  # 交易合约代码
     HISTORY_DAY_LENGTH = 20  # 使用多少天的历史数据用来计算每个时间单元的下单手数
+
     START_HOUR, START_MINUTE = 9, 35  # 计划交易时段起始时间点
     END_HOUR, END_MINUTE = 10, 50  # 计划交易时段终点时间点
 
@@ -23,6 +24,7 @@ def vwap(api: TqApi, symbol: str):
     time_slot_start = datetime.time(START_HOUR, START_MINUTE)  # 计划交易时段起始时间点
     time_slot_end = datetime.time(END_HOUR, END_MINUTE)  # 计划交易时段终点时间点
     klines = api.get_kline_serial(SYMBOL, TIME_CELL, data_length=int(10*60*60/TIME_CELL*HISTORY_DAY_LENGTH))
+    
     target_pos = TargetPosTask(api, SYMBOL)
     position = api.get_position(SYMBOL)  # 持仓信息
 

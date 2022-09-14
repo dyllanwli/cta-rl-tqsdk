@@ -16,10 +16,14 @@ def main():
     backtest = TqBacktest(start_dt=datetime.date(
         2018, 7, 2), end_dt=datetime.date(2018, 9, 1))
 
+    quote = api.get_quote(symbol)
+    print(quote)
     policy = Policy()
+    api.close()
+
 
     # policy.load_policy('random_forest')(auth, symbol, backtest)
-    policy.load_policy('vwap')(api, symbol)
+    # policy.load_policy('vwap')(api, symbol)
 
     # quote = api.get_quote(symbol)
     # while True:
