@@ -8,27 +8,15 @@ from tqsdk import TqApi, TqBacktest
 
 
 def main():
-    tqAPI = API()
+    tqAPI = API(account='a1')
     api = tqAPI.api
-    auth = tqAPI.auth
     cmod = Commodity()
-    symbol = cmod.getCommodityConfig('铁矿石') + "2301"
-    backtest = TqBacktest(start_dt=datetime.date(
-        2018, 7, 2), end_dt=datetime.date(2018, 9, 1))
-
-    quote = api.get_quote(symbol)
-    print(quote)
+    symbol = cmod.getCommodityConfig('铁矿石') + "2209"
+    backtest = TqBacktest(
+        start_dt=datetime.date(2022, 3, 1), end_dt=datetime.date(2022, 7, 1))
     policy = Policy()
-    api.close()
 
-
-    # policy.load_policy('random_forest')(auth, symbol, backtest)
-    # policy.load_policy('vwap')(api, symbol)
-
-    # quote = api.get_quote(symbol)
-    # while True:
-    #     api.wait_update()
-    #     print(quote)
+    policy.load_policy('vwap').backtest(api._auth, symbol, backtest)
 
 
 if __name__ == "__main__":
