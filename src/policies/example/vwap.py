@@ -113,10 +113,9 @@ class VWAP:
                 if position["volume_long"] - position["volume_short"] == TARGET_VOLUME:
                     break
 
-    def backtest(self, auth, symbol, bt=None):
+    def backtest(self, auth, symbol, start_dt, end_dt):
         acc = TqSim()
-        backtest = TqBacktest(
-            start_dt=datetime.date(2022, 3, 1), end_dt=datetime.date(2022, 7, 1)) if bt is None else bt
+        backtest = TqBacktest(start_dt, end_dt)
         try:
             api = TqApi(acc, backtest=backtest, auth=auth)
             self.run(api, symbol)

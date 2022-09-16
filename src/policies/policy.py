@@ -10,5 +10,5 @@ class Policy:
             from .example.vwap import VWAP
             return VWAP()
         elif name == 'r_breaker':
-            from .example.r_breaker import r_breaker
-            return r_breaker
+            from .example.r_breaker import RBreaker
+            return RBreaker()
