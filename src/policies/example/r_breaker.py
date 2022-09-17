@@ -12,10 +12,9 @@ class RBreaker:
     def run(self, api, symbol):
 
         SYMBOL = symbol
-        CLOSE_HOUR, CLOSE_MINUTE = 14, 55  # 平仓时间
+        CLOSE_HOUR, CLOSE_MINUTE = 14, 50  # 平仓时间
         STOP_LOSS_PRICE = 10  # 止损点(价格)
 
-        api = api
         print("策略开始运行")
 
         def get_index_line(klines):
@@ -45,7 +44,9 @@ class RBreaker:
 
         while True:
             target_pos.set_target_volume(target_pos_value)
+
             api.wait_update()
+
             if api.is_changing(klines.iloc[-1], "datetime"):  # 产生新k线,则重新计算7条指标线
                 pivot, bBreak, sSetup, sEnter, bEnter, bSetup, sBreak = get_index_line(
                     klines)
@@ -60,7 +61,7 @@ class RBreaker:
 
             '''交易规则'''
             if api.is_changing(quote, "last_price"):
-                print("最新价: %f" % quote.last_price)
+                print("%s 最新价: %f" % (quote.datetime, quote.last_price))
 
                 # 开仓价与当前行情价之差大于止损点则止损
                 if (target_pos_value > 0 and open_position_price - quote.last_price >= STOP_LOSS_PRICE) or \
@@ -106,14 +107,14 @@ class RBreaker:
         backtest = TqBacktest(start_dt, end_dt)
         try:
             print("开始回测")
-            api = TqApi(acc, backtest=backtest, auth=auth)
+            api = TqApi(acc, backtest=backtest, auth=auth, debug="./debugs/%s.log" % datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             self.run(api, symbol)
 
         except BacktestFinished as e:
-            api.close()
+            print("回测结束")
             print(acc.trade_log)  # 回测的详细信息
-
             print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
+            print(acc._init_balance)
             # init_balance 起始资金
             # balance 结束资金
             # max_drawdown 最大回撤
@@ -123,5 +124,4 @@ class RBreaker:
             # annual_yield 年化收益率
             # sharpe_ratio 年化夏普率
             # tqsdk_punchline 天勤点评
-            while True:
-                api.wait_update()
+            api.close()
