@@ -8,13 +8,13 @@ from tqsdk import TqApi
 
 
 def main():
-    tqAPI = API(account='a1')
+    tqAPI = API(account='a2')
     api = tqAPI.api
     cmod = Commodity()
     symbol = cmod.getCommodityConfig('铁矿石') + "2209"
     policy = Policy()
 
-    policy.load_policy('r_breaker').backtest(api._auth, symbol, start_dt=datetime.date(
+    policy.load_policy('r_breaker_overnight').backtest(api._auth, symbol, start_dt=datetime.date(
         2022, 3, 1), end_dt=datetime.date(2022, 7, 1))
 
 

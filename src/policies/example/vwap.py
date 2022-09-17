@@ -3,9 +3,10 @@
 
 import datetime
 from tqsdk import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
+from .base import BasePolicy
 
 
-class VWAP:
+class VWAP(BasePolicy):
     """
     VWAP 策略
     input:
@@ -112,27 +113,3 @@ class VWAP:
             if api.is_changing(position, "volume_long") or api.is_changing(position, "volume_short"):
                 if position["volume_long"] - position["volume_short"] == TARGET_VOLUME:
                     break
-
-    def backtest(self, auth, symbol, start_dt, end_dt):
-        acc = TqSim()
-        backtest = TqBacktest(start_dt, end_dt)
-        try:
-            api = TqApi(acc, backtest=backtest, auth=auth)
-            self.run(api, symbol)
-
-        except BacktestFinished as e:
-            api.close()
-            print(acc.trade_log)  # 回测的详细信息
-
-            print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
-            # init_balance 起始资金
-            # balance 结束资金
-            # max_drawdown 最大回撤
-            # profit_loss_ratio 盈亏额比例
-            # winning_rate 胜率
-            # ror 收益率
-            # annual_yield 年化收益率
-            # sharpe_ratio 年化夏普率
-            # tqsdk_punchline 天勤点评
-            while True:
-                api.wait_update()
