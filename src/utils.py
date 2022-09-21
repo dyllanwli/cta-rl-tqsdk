@@ -4,7 +4,7 @@ import os.path
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def getConfig():
+def get_config():
     # Read YAML file
     configFilePath = os.path.join(DIR, "config.yaml")
     with open(configFilePath, 'r') as stream:
@@ -14,7 +14,7 @@ def getConfig():
 
 
 
-def getTradingTime(quote):
+def get_trading_time(quote):
     """
     quote: quote object
     """

@@ -1,6 +1,7 @@
 commodity:
-  铁矿石: DCE.i
-  天然橡胶: SHFE.ru
+  iron_orb: DCE.i # 铁矿石
+  natural_rubber: SHFE.ru # 天然橡胶
+  rebar: SHFE.rb # 螺纹钢
 
 # SHFE.cu1901 - 上期所 cu1901 期货合约
 # DCE.m1901 - 大商所 m1901 期货合约

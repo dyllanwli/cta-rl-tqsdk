@@ -1,0 +1,88 @@
+{
+    "datetime": "2022-09-21 10: 36: 41.800000",
+    "ask_price1": 692.5,
+    "ask_volume1": 266,
+    "bid_price1": 692.0,
+    "bid_volume1": 252,
+    "ask_price2": "nan",
+    "ask_volume2": 0,
+    "bid_price2": "nan",
+    "bid_volume2": 0,
+    "ask_price3": "nan",
+    "ask_volume3": 0,
+    "bid_price3": "nan",
+    "bid_volume3": 0,
+    "ask_price4": "nan",
+    "ask_volume4": 0,
+    "bid_price4": "nan",
+    "bid_volume4": 0,
+    "ask_price5": "nan",
+    "ask_volume5": 0,
+    "bid_price5": "nan",
+    "bid_volume5": 0,
+    "last_price": 692.5,
+    "highest": 703.5,
+    "lowest": 686.5,
+    "open": 696.0,
+    "close": "nan",
+    "average": 694.5,
+    "volume": 466085,
+    "amount": 32384421300.0,
+    "open_interest": 747211,
+    "settlement": "nan",
+    "upper_limit": 788.0,
+    "lower_limit": 632.0,
+    "pre_open_interest": 742730,
+    "pre_settlement": 710.0,
+    "pre_close": 696.0,
+    "price_tick": 0.5,
+    "price_decs": 1,
+    "volume_multiple": 100.0,
+    "max_limit_order_volume": 0,
+    "max_market_order_volume": 0,
+    "min_limit_order_volume": 0,
+    "min_market_order_volume": 0,
+    "underlying_symbol": "DCE.i2301",
+    "strike_price": "nan",
+    "ins_class": "CONT",
+    "instrument_id": "KQ.m@DCE.i",
+    "instrument_name": "铁矿主连",
+    "exchange_id": "KQ",
+    "expired": "False",
+    "trading_time": {
+        "day": [
+            [
+                "09:00:00",
+                "10:15:00"
+            ],
+            [
+                "10:30:00",
+                "11:30:00"
+            ],
+            [
+                "13:30:00",
+                "15:00:00"
+            ]
+        ],
+        "night": [
+            [
+                "21:00:00",
+                "23:00:00"
+            ]
+        ]
+    },
+    "expire_datetime": "nan",
+    "delivery_year": 0,
+    "delivery_month": 0,
+    "last_exercise_datetime": "nan",
+    "exercise_year": 0,
+    "exercise_month": 0,
+    "option_class": "",
+    "exercise_type": "",
+    "product_id": "",
+    "iopv": "nan",
+    "public_float_share_quantity": 0,
+    "stock_dividend_ratio": [],
+    "cash_dividend_ratio": [],
+    "expire_rest_days": "nan"
+}
