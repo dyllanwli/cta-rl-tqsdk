@@ -10,6 +10,9 @@ class BasePolicy:
     def run(self, api, symbol):
         pass
 
+    def strptime(self, quote_time):
+        return datetime.strptime(quote_time, "%Y-%m-%d %H:%M:%S.%f")
+
     def backtest(self, auth, symbol, start_dt, end_dt, debug=False):
         print("开始回测")
 
@@ -28,7 +31,7 @@ class BasePolicy:
                 print("回测结束")
                 account = api.get_account()
                 print(acc.trade_log)  # 回测的详细信息
-                print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
+                print(acc.tqsdk_stat)  
                 print(account.balance)  # 回测结束时的账户权益
                 # init_balance 起始资金
                 # balance 结束资金
@@ -40,7 +43,7 @@ class BasePolicy:
                 # sharpe_ratio 年化夏普率
                 # tqsdk_punchline 天勤点评
             except IndexError as e:
-                print("回测结束 + IndexError")
+                print("回测结束(IndexError)")
                 account = api.get_account()
-                # print(acc.trade_log)
-                # print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
+                print(acc.trade_log)
+                print(acc.tqsdk_stat)  

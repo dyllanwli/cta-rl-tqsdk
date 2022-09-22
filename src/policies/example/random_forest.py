@@ -2,7 +2,6 @@
 #  -*- coding: utf-8 -*-
 
 import pandas as pd
-import datetime
 from contextlib import closing
 from tqsdk import TqApi, TqBacktest, BacktestFinished, TargetPosTask
 from tqsdk.tafunc import sma, ema2, trma
@@ -64,31 +63,33 @@ class RandomForest(BasePolicy):
         print("start random_forest")
         self.api = api
 
-        close_hour, close_minute = 14, 50  # 预定收盘时间(因为真实收盘后无法进行交易, 所以提前设定收盘时间)
+        close_hour, close_minute = 1, 50  # 预定收盘时间(因为真实收盘后无法进行交易, 所以提前设定收盘时间)当前设备时间
         predictions = []  # 用于记录每次的预测结果(在每个交易日收盘时用收盘数据预测下一交易日的涨跌,并记录在此列表里)
 
         kq_quote = api.get_quote(symbol)
-        quote = self.update_quote(api, kq_quote)
         klines = api.get_kline_serial(symbol, duration_seconds=self.day_kline)
         target_pos = TargetPosTask(api, symbol)
         while True:
             # 等到达下一个交易日
             while not api.is_changing(klines.iloc[-1], "datetime"):
                 api.wait_update()
+            print("klines close price", klines.close.iloc[-1])
             while True:
                 api.wait_update()
+                print("quote prices", kq_quote.last_price, kq_quote.datetime )
                 if api.is_changing(kq_quote, "underlying_symbol"):
-                    quote = self.update_quote(api, kq_quote)
+                    print("underlying_symbol changed to",
+                          kq_quote.underlying_symbol)
+                    self.underlying_symbol = kq_quote.underlying_symbol
                     target_pos = self.change_target_pos(target_pos)
                 # 在收盘后预测下一交易日的涨跌情况
-                if api.is_changing(quote, "datetime"):
-                    now = datetime.datetime.strptime(
-                        quote.datetime, "%Y-%m-%d %H:%M:%S.%f")  # 当前quote的时间
+                if api.is_changing(kq_quote, "datetime"):
+                    now = self.strptime(kq_quote.datetime)
                     # 判断是否到达预定收盘时间: 如果到达 则认为本交易日收盘, 此时预测下一交易日的涨跌情况, 并调整为对应仓位
                     if now.hour == close_hour and now.minute >= close_minute:
                         # 1- 获取数据
                         x_train, y_train, x_predict = self.get_prediction_data(
-                            klines, 90)
+                            klines, 75)
 
                         # 2- 利用机器学习算法预测下一个交易日的涨跌情况
                         # n_estimators 参数: 选择森林里（决策）树的数目; bootstrap 参数: 选择建立决策树时，是否使用有放回抽样
@@ -97,14 +98,15 @@ class RandomForest(BasePolicy):
                         clf.fit(x_train, y_train)  # 传入训练数据, 进行参数训练
                         # 传入测试数据进行预测, 得到预测的结果
                         predictions.append(bool(clf.predict([x_predict])))
-
                         # 3- 进行交易
                         if predictions[-1] == True:  # 如果预测结果为涨: 买入
-                            print(quote.datetime, "预测下一交易日为 涨")
+                            print(kq_quote.datetime, "预测下一交易日为 涨")
                             self.current_pos = 10
                             target_pos.set_target_volume(self.current_pos)
                         else:  # 如果预测结果为跌: 卖出
-                            print(quote.datetime, "预测下一交易日为 跌")
+                            print(kq_quote.datetime, "预测下一交易日为 跌")
                             self.current_pos = -10
                             target_pos.set_target_volume(self.current_pos)
+
+                        print("预测结果: ", predictions[-1])
                         break

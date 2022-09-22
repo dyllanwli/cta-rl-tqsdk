@@ -8,16 +8,13 @@ from tqsdk import TqApi
 
 
 def main():
-    tqAPI = API(account='a1')
-    api = tqAPI.api
+    tqAPI = API(account='a2')
     cmod = Commodity()
     lp = LoadPolicy()
     symbol = cmod.get_kq_name('iron_orb')
 
-    lp.load_policy('random_forest').backtest(api._auth, symbol, start_dt=datetime.date(
-        2021, 7, 1), end_dt=datetime.date(2022, 7, 1))
-
-    api.close()
+    lp.load_policy('random_forest').backtest(tqAPI.auth, symbol, start_dt=datetime.date(
+        2021, 12, 1), end_dt=datetime.date(2022, 7, 1))
 
 
 if __name__ == "__main__":
