@@ -21,5 +21,7 @@ def get_trading_time(quote):
     # Get trading time
     tradingTime = quote['trading_time']
     day = tradingTime['day']
-    night = tradingTime['night']
+    night = tradingTime['night'] 
+    # if it's overnight, it will be over 24:00 
+    # e.g. 21:00:00 - 26:30:00 means 21:00:00 - 2:30:00 next day
     return day, night

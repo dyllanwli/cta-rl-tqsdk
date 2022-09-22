@@ -1,0 +1,88 @@
+{
+    "datetime": "2022-09-21 23: 15: 24.000000",
+    "ask_price1": 4458.0,
+    "ask_volume1": 163,
+    "bid_price1": 4457.0,
+    "bid_volume1": 113,
+    "ask_price2": 4459.0,
+    "ask_volume2": 196,
+    "bid_price2": 4456.0,
+    "bid_volume2": 194,
+    "ask_price3": 4460.0,
+    "ask_volume3": 381,
+    "bid_price3": 4455.0,
+    "bid_volume3": 226,
+    "ask_price4": 4461.0,
+    "ask_volume4": 93,
+    "bid_price4": 4454.0,
+    "bid_volume4": 138,
+    "ask_price5": 4462.0,
+    "ask_volume5": 171,
+    "bid_price5": 4453.0,
+    "bid_volume5": 161,
+    "last_price": 4458.0,
+    "highest": 4496.0,
+    "lowest": 4446.0,
+    "open": 4490.0,
+    "close": "nan",
+    "average": 4469.87485,
+    "volume": 216492,
+    "amount": 14515382190.0,
+    "open_interest": 477453,
+    "settlement": "nan",
+    "upper_limit": 4845.0,
+    "lower_limit": 3964.0,
+    "pre_open_interest": 465290,
+    "pre_settlement": 4405.0,
+    "pre_close": 4443.0,
+    "price_tick": 1.0,
+    "price_decs": 0,
+    "volume_multiple": 15.0,
+    "max_limit_order_volume": 0,
+    "max_market_order_volume": 0,
+    "min_limit_order_volume": 0,
+    "min_market_order_volume": 0,
+    "underlying_symbol": "SHFE.ag2212",
+    "strike_price": "nan",
+    "ins_class": "CONT",
+    "instrument_id": "KQ.m@SHFE.ag",
+    "instrument_name": "沪银主连",
+    "exchange_id": "KQ",
+    "expired": "False",
+    "trading_time": {
+        "day": [
+            [
+                "09:00:00",
+                "10:15:00"
+            ],
+            [
+                "10:30:00",
+                "11:30:00"
+            ],
+            [
+                "13:30:00",
+                "15:00:00"
+            ]
+        ],
+        "night": [
+            [
+                "21:00:00",
+                "26:30:00"
+            ]
+        ]
+    },
+    "expire_datetime": "nan",
+    "delivery_year": 0,
+    "delivery_month": 0,
+    "last_exercise_datetime": "nan",
+    "exercise_year": 0,
+    "exercise_month": 0,
+    "option_class": "",
+    "exercise_type": "",
+    "product_id": "",
+    "iopv": "nan",
+    "public_float_share_quantity": 0,
+    "stock_dividend_ratio": [],
+    "cash_dividend_ratio": [],
+    "expire_rest_days": "nan"
+}

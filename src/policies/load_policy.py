@@ -1,11 +1,11 @@
-class Policy:
+class LoadPolicy:
     def __init__(self, config=None):
         self.config = config
 
     def load_policy(self, name):
         if name == 'random_forest':
-            from .example.random_forest import random_forest
-            return random_forest
+            from .example.random_forest import RandomForest
+            return RandomForest()
         elif name == 'vwap':
             from .example.vwap import VWAP
             return VWAP()

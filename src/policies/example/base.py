@@ -5,7 +5,7 @@ from contextlib import closing
 
 class BasePolicy:
     def __init__(self):
-        pass
+        self.day_kline = 24 * 60 * 60 # day kline
 
     def run(self, api, symbol):
         pass
@@ -42,6 +42,5 @@ class BasePolicy:
             except IndexError as e:
                 print("回测结束 + IndexError")
                 account = api.get_account()
-                print(acc.trade_log)
-                print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
-                print(account.balance)  # 回测结束时的账户权益
+                # print(acc.trade_log)
+                # print(acc.tqsdk_stat)  # 回测时间内账户交易信息统计结果，其中包含以下字段
