@@ -15,3 +15,6 @@ class LoadPolicy:
         elif name == 'r_breaker_overnight':
             from .example.r_breaker_overnight import RBreakerOvernight
             return RBreakerOvernight()
+        elif name == 'grid':
+            from .example.grid import Grid
+            return Grid()

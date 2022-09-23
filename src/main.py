@@ -3,18 +3,22 @@ import datetime
 from API import API
 from commodity import Commodity
 from policies.load_policy import LoadPolicy
+from tqsdk.tafunc import time_to_datetime
 
 from tqsdk import TqApi
-
+import wandb
 
 def main():
-    tqAPI = API(account='a2')
+    tqAPI = API(account='a3')
     cmod = Commodity()
     lp = LoadPolicy()
-    symbol = cmod.get_kq_name('iron_orb')
+    symbol = cmod.get_kq_name('egg')
 
-    lp.load_policy('random_forest').backtest(tqAPI.auth, symbol, start_dt=datetime.date(
-        2021, 12, 1), end_dt=datetime.date(2022, 7, 1))
+    # init wandb by symbol and datetime
+    wandb.init(project="tqrl-dev", name=symbol + '_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
+    lp.load_policy('grid').backtest(tqAPI.auth, symbol, start_dt=datetime.date(
+        2018, 9, 10), end_dt=datetime.date(2018, 11, 16))
 
 
 if __name__ == "__main__":

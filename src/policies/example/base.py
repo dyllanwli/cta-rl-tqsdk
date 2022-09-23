@@ -1,17 +1,40 @@
 from datetime import datetime
 from tqsdk import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
+from tqsdk.objs import Account
 from contextlib import closing
+
+import wandb
 
 
 class BasePolicy:
     def __init__(self):
-        self.day_kline = 24 * 60 * 60 # day kline
+        self.day_kline = 24 * 60 * 60  # day kline
 
     def run(self, api, symbol):
         pass
 
-    def strptime(self, quote_time):
-        return datetime.strptime(quote_time, "%Y-%m-%d %H:%M:%S.%f")
+    def end_of_day(self, now):
+        return now.hour == 1 and now.minute == 59 and now.second == 59 and now.microsecond >= 999999
+
+    def wandb_log(self, account: Account):
+        wandb.log({
+            # "currency": account.currency,
+            "pre_balance": account.pre_balance,
+            "static_balance": account.static_balance,
+            "balance": account.balance,
+            "available": account.available,
+            "float_profit": account.float_profit,
+            "position_profit": account.position_profit,
+            "close_profit": account.close_profit,
+            "frozen_margin": account.frozen_margin,
+            "margin": account.margin,
+            "frozen_commission": account.frozen_commission,
+            "commission": account.commission,
+            "frozen_premium": account.frozen_premium,
+            "premium": account.premium,
+            "risk_ratio": account.risk_ratio,
+            "market_value": account.market_value,
+        })
 
     def backtest(self, auth, symbol, start_dt, end_dt, debug=False):
         print("开始回测")
@@ -29,21 +52,13 @@ class BasePolicy:
 
             except BacktestFinished as e:
                 print("回测结束")
-                account = api.get_account()
-                print(acc.trade_log)  # 回测的详细信息
-                print(acc.tqsdk_stat)  
-                print(account.balance)  # 回测结束时的账户权益
-                # init_balance 起始资金
-                # balance 结束资金
-                # max_drawdown 最大回撤
-                # profit_loss_ratio 盈亏额比例
-                # winning_rate 胜率
-                # ror 收益率
-                # annual_yield 年化收益率
-                # sharpe_ratio 年化夏普率
-                # tqsdk_punchline 天勤点评
+                self.backtest_log(api, acc)
             except IndexError as e:
                 print("回测结束(IndexError)")
-                account = api.get_account()
-                print(acc.trade_log)
-                print(acc.tqsdk_stat)  
+                self.backtest_log(api, acc)
+
+    def backtest_log(self, api: TqApi, acc: TqSim):
+        account = api.get_account()
+        # print("回测的详细信息", acc.trade_log)
+        # print("回测状态", acc.tqsdk_stat)
+        print("回测结束时的账户权益", account.balance)

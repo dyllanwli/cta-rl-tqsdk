@@ -4,7 +4,7 @@
 import pandas as pd
 from contextlib import closing
 from tqsdk import TqApi, TqBacktest, BacktestFinished, TargetPosTask
-from tqsdk.tafunc import sma, ema2, trma
+from tqsdk.tafunc import sma, ema2, trma, time_to_datetime
 from sklearn.ensemble import RandomForestClassifier
 
 from .base import BasePolicy
@@ -84,7 +84,7 @@ class RandomForest(BasePolicy):
                     target_pos = self.change_target_pos(target_pos)
                 # 在收盘后预测下一交易日的涨跌情况
                 if api.is_changing(kq_quote, "datetime"):
-                    now = self.strptime(kq_quote.datetime)
+                    now = time_to_datetime(kq_quote.datetime)
                     # 判断是否到达预定收盘时间: 如果到达 则认为本交易日收盘, 此时预测下一交易日的涨跌情况, 并调整为对应仓位
                     if now.hour == close_hour and now.minute >= close_minute:
                         # 1- 获取数据

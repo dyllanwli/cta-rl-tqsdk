@@ -3,6 +3,7 @@ commodity:
   natural_rubber: SHFE.ru # 天然橡胶
   rebar: SHFE.rb # 螺纹钢
   sliver: SHFE.ag # 白银
+  egg: DCE.jd # 鸡蛋
 
 # SHFE.cu1901 - 上期所 cu1901 期货合约
 # DCE.m1901 - 大商所 m1901 期货合约
