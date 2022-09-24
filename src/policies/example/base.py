@@ -43,7 +43,7 @@ class BasePolicy:
         backtest = TqBacktest(start_dt, end_dt)
         if debug:
             api = TqApi(acc, backtest=backtest, auth=auth, debug="./debugs/%s.log" %
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), web_gui=True)
         else:
             api = TqApi(acc, backtest=backtest, auth=auth)
         with closing(api):
