@@ -6,6 +6,7 @@ __pycache__/
 
 # WandB files
 wandb/
+config.yaml
 
 # C extensions
 *.so
