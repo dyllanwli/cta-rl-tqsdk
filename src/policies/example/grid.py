@@ -93,4 +93,4 @@ class Grid(BasePolicy):
             now = time_to_datetime(quote.datetime)
             if self.end_of_day(now):
                 print("当前时间: %s" % now)
-                self.wandb_log(account)
+                self.wandb_log(account, now)

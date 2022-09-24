@@ -1,7 +1,1 @@
-from gym.envs.registration import register
-
-
-register(
-    id="FuturesEnv-v1",
-    entry_point="env:FuturesEnvV1"
-)
+from .futures_env_v1 import FuturesEnvV1

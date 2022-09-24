@@ -16,7 +16,7 @@ class BasePolicy:
     def end_of_day(self, now):
         return now.hour == 1 and now.minute == 59 and now.second == 59 and now.microsecond >= 999999
 
-    def wandb_log(self, account: Account):
+    def wandb_log(self, account: Account, now: datetime):
         wandb.log({
             # "currency": account.currency,
             "pre_balance": account.pre_balance,
@@ -34,6 +34,7 @@ class BasePolicy:
             "premium": account.premium,
             "risk_ratio": account.risk_ratio,
             "market_value": account.market_value,
+            "time": now
         })
 
     def backtest(self, auth, symbol, start_dt, end_dt, debug=False):
@@ -43,7 +44,7 @@ class BasePolicy:
         backtest = TqBacktest(start_dt, end_dt)
         if debug:
             api = TqApi(acc, backtest=backtest, auth=auth, debug="./debugs/%s.log" %
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), web_gui=True)
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"), web_gui=False)
         else:
             api = TqApi(acc, backtest=backtest, auth=auth)
         with closing(api):
