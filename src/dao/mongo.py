@@ -127,6 +127,8 @@ class MongoDAO:
         print("updating", underlying_symbol)
 
         # subscribe data
+        self.tick_data[instrument] = self.api.get_tick_serial(
+            underlying_symbol, data_length=2)
         self.bar_data_1m[instrument] = self.api.get_kline_serial(
             underlying_symbol, 60, data_length=2)
         self.bar_data_5m[instrument] = self.api.get_kline_serial(
@@ -139,33 +141,6 @@ class MongoDAO:
             underlying_symbol, 3600, data_length=2)
         self.bar_data_1d[instrument] = self.api.get_kline_serial(
             underlying_symbol, 86400, data_length=2)
-        self.tick_data[instrument] = self.api.get_tick_serial(
-            underlying_symbol, data_length=2)
-
-        # save data
-        self.save_bar_data(underlying_symbol, instrument,
-                           self.bars_data_1m[instrument], Interval.ONE_MIN)
-        self.save_bar_data(underlying_symbol, instrument,
-                           self.bars_data_5m[instrument], Interval.FIVE_MIN)
-        self.save_bar_data(underlying_symbol, instrument,
-                            self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
-        self.save_bar_data(underlying_symbol, instrument,
-                            self.bars_data_30m[instrument], Interval.THIRTY_MIN)
-        self.save_bar_data(underlying_symbol, instrument,   
-                            self.bars_data_1h[instrument], Interval.ONE_HOUR)
-        self.save_bar_data(underlying_symbol, instrument,
-                            self.bars_data_1d[instrument], Interval.ONE_DAY)
-        self.save_tick_data(underlying_symbol, instrument,
-                            self.ticks_data[instrument])   
-
-        # Reset defaultdict
-        self.bars_data_1m[instrument] = []
-        self.bars_data_5m[instrument] = []
-        self.bars_data_15m[instrument] = []
-        self.bars_data_30m[instrument] = []
-        self.bars_data_1h[instrument] = []
-        self.bars_data_1d[instrument] = []
-        self.ticks_data = []
 
     def setup(self, auth: TqAuth, start_dt: date = None, end_dt: date = None) -> None:
         if start_dt and end_dt:
@@ -189,24 +164,24 @@ class MongoDAO:
 
         # Initialize data object
         instrument_quotes: Dict[str, Quote] = dict()
+        self.tick_data: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_5m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_15m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_30m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1h: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1d: Dict[str, pd.DataFrame] = dict()
-        self.tick_data: Dict[str, pd.DataFrame] = dict()
 
         # Initialize TqApi
         self.setup(auth, start_dt, end_dt)
 
+        self.ticks_data = list()
         self.bars_data_1m = defaultdict(list)
         self.bars_data_5m = defaultdict(list)
         self.bars_data_15m = defaultdict(list)
         self.bars_data_30m = defaultdict(list)
         self.bars_data_1h = defaultdict(list)
         self.bars_data_1d = defaultdict(list)
-        self.ticks_data = list()
 
         with closing(self.api):
             for instrument in instrument_list:
@@ -218,6 +193,12 @@ class MongoDAO:
                 self.api.wait_update()
                 for instrument in instrument_list:
                     iqt = instrument_quotes[instrument]
+                    underlying_symbol = iqt.underlying_symbol
+
+                    if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
+                        self.ticks_data.append(
+                            self.tick_data[instrument].iloc[-2])
+
                     if self.api.is_changing(iqt, "underlyinself.tick_datag_symbol"):
                         self.update_bar_data_subscribe(
                             instrument, instrument_quotes)
@@ -246,6 +227,27 @@ class MongoDAO:
                         self.bars_data_1d.append(
                             self.bar_data_1d[instrument].iloc[-2])
 
-                    if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
-                        self.ticks_data.append(
-                            self.tick_data[instrument].iloc[-2])
+                        # save data by day to database
+                        self.save_tick_data(underlying_symbol, instrument,
+                                            self.ticks_data[instrument])   
+                        self.save_bar_data(underlying_symbol, instrument,
+                                        self.bars_data_1m[instrument], Interval.ONE_MIN)
+                        self.save_bar_data(underlying_symbol, instrument,
+                                        self.bars_data_5m[instrument], Interval.FIVE_MIN)
+                        self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
+                        self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_30m[instrument], Interval.THIRTY_MIN)
+                        self.save_bar_data(underlying_symbol, instrument,   
+                                            self.bars_data_1h[instrument], Interval.ONE_HOUR)
+                        self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_1d[instrument], Interval.ONE_DAY)
+
+                        # Reset defaultdict
+                        self.ticks_data = []
+                        self.bars_data_1m[instrument] = []
+                        self.bars_data_5m[instrument] = []
+                        self.bars_data_15m[instrument] = []
+                        self.bars_data_30m[instrument] = []
+                        self.bars_data_1h[instrument] = []
+                        self.bars_data_1d[instrument] = []
