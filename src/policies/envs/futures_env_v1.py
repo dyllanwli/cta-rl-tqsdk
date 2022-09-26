@@ -2,13 +2,14 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
+from constant import EnvConfig
 
 class FuturesEnvV1(gym.Env):
     """
     Custom Environment with Tqsdk for RL training
     """
     metadata = {'render.modes': ['human']}
-    def __init__(self, config):
+    def __init__(self, config: EnvConfig):
         super(gym.Env, self).__init__()
 
         self._set_config(config)
@@ -16,8 +17,8 @@ class FuturesEnvV1(gym.Env):
 
         self.reset()
     
-    def _set_config(self, config):
-        pass
+    def _set_config(self, config: EnvConfig):
+        
 
     def step(self, action):
         pass
