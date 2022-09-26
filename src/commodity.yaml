@@ -1,9 +1,29 @@
 commodity:
-  iron_orb: DCE.i # 铁矿石
+  glass: CZCE.FG # 玻璃
+  sugar: CZCE.SR # 白糖
+  soda_ash: CZCE.SA # 纯碱
+  rapeseed_meal: CZCE.RM # 菜粕
+  vegetable_oil: CZCE.OI # 菜油
+  rapeseed: CZCE.RS # 菜籽
+  staple_fiber: CZCE.PF # 短纤
+  cotton: CZCE.CF # 一号棉花
+  methanol: CZCE.MA # 甲醇
+
+  stainless_steel: SHFE.ss # 不锈钢
+  low_sulphur_fuel_oil: SHFE.lu # 低硫燃料油
   natural_rubber: SHFE.ru # 天然橡胶
   rebar: SHFE.rb # 螺纹钢
   sliver: SHFE.ag # 白银
+  copper: SHFE.cu # 沪铜
+
+  styrene: DCE.eb # 苯乙烯
+  bean_2: DCE.b # 豆二
+  starch: DCE.cs # 淀粉
+  soybean: DCE.m # 豆粕
+  iron_orb: DCE.i # 铁矿石
   egg: DCE.jd # 鸡蛋
+  
+  
 
 # SHFE.cu1901 - 上期所 cu1901 期货合约
 # DCE.m1901 - 大商所 m1901 期货合约

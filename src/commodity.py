@@ -18,5 +18,5 @@ class Commodity:
     def get_name(self, name: str):
         return self.commodityConfig[name]
 
-    def get_kq_name(self, name: str):
+    def get_instrument_name(self, name: str):
         return "KQ.m@" + self.commodityConfig[name]
