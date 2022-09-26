@@ -1,7 +1,7 @@
 import copy
 import weakref
 from collections.abc import MutableMapping
-from tqsdk2 import TqApi, TqSim, TqBacktest, BacktestFinished
+from tqsdk import TqApi, TqSim, TqBacktest, BacktestFinished
 
 class Entity(MutableMapping):
     def _instance_entity(self, path):
@@ -36,6 +36,6 @@ class Entity(MutableMapping):
 class EnvConfig(Entity):
     # env config is a entity
     def __init__(self, api: TqApi, ):
-        self.
+        pass
 
 

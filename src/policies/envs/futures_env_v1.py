@@ -6,7 +6,7 @@ from constant import EnvConfig
 
 class FuturesEnvV1(gym.Env):
     """
-    Custom Environment with Tqsdk2 for RL training
+    Custom Environment for RL training
     """
     metadata = {'render.modes': ['human']}
     def __init__(self, config: EnvConfig):
@@ -18,7 +18,7 @@ class FuturesEnvV1(gym.Env):
         self.reset()
     
     def _set_config(self, config: EnvConfig):
-        
+        pass
 
     def step(self, action):
         pass

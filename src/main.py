@@ -5,12 +5,12 @@ from API import API
 # from policies.load_policy import LoadPolicy
 from dao.mongo import MongoDAO
 
-from tqsdk2 import TqApi
+from tqsdk import TqApi
 import wandb
-
 
 def main():
     tqAPI = API(account='a1')
+    # tqAPI.test("SHFE.ag2212")
     # cmod = Commodity()
     # symbol = cmod.get_instrument_name('egg')
 

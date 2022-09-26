@@ -8,9 +8,9 @@ from pymongo import MongoClient, ReplaceOne
 from pymongo.database import Database
 
 import pandas as pd
-from tqsdk2 import TqApi, TqAuth, TqSim, TqBacktest
-from tqsdk2.objs import Quote, Account, Position
-from tqsdk2.tafunc import time_to_datetime, time_to_str
+from tqsdk import TqApi, TqAuth, TqSim, TqBacktest
+from tqsdk.objs import Quote, Account, Position
+from tqsdk.tafunc import time_to_datetime, time_to_str
 
 from utils import SETTINGS, Interval
 from commodity import Commodity
@@ -210,38 +210,38 @@ class MongoDAO:
                     if self.api.is_changing(self.bar_data_5m[instrument].iloc[-1], "datetime"):
                         self.bars_data_5m.append(
                             self.bar_data_1m[instrument].iloc[-2])
-                    
+
                     if self.api.is_changing(self.bar_data_15m[instrument].iloc[-1], "datetime"):
                         self.bars_data_15m.append(
                             self.bar_data_15m[instrument].iloc[-2])
-                    
+
                     if self.api.is_changing(self.bar_data_30m[instrument].iloc[-1], "datetime"):
                         self.bars_data_30m.append(
                             self.bar_data_30m[instrument].iloc[-2])
-                    
+
                     if self.api.is_changing(self.bar_data_1h[instrument].iloc[-1], "datetime"):
                         self.bars_data_1h.append(
                             self.bar_data_1h[instrument].iloc[-2])
-                    
+
                     if self.api.is_changing(self.bar_data_1d[instrument].iloc[-1], "datetime"):
                         self.bars_data_1d.append(
                             self.bar_data_1d[instrument].iloc[-2])
 
                         # save data by day to database
                         self.save_tick_data(underlying_symbol, instrument,
-                                            self.ticks_data[instrument])   
+                                            self.ticks_data[instrument])
                         self.save_bar_data(underlying_symbol, instrument,
-                                        self.bars_data_1m[instrument], Interval.ONE_MIN)
+                                           self.bars_data_1m[instrument], Interval.ONE_MIN)
                         self.save_bar_data(underlying_symbol, instrument,
-                                        self.bars_data_5m[instrument], Interval.FIVE_MIN)
+                                           self.bars_data_5m[instrument], Interval.FIVE_MIN)
                         self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
+                                           self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
                         self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_30m[instrument], Interval.THIRTY_MIN)
-                        self.save_bar_data(underlying_symbol, instrument,   
-                                            self.bars_data_1h[instrument], Interval.ONE_HOUR)
+                                           self.bars_data_30m[instrument], Interval.THIRTY_MIN)
                         self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1d[instrument], Interval.ONE_DAY)
+                                           self.bars_data_1h[instrument], Interval.ONE_HOUR)
+                        self.save_bar_data(underlying_symbol, instrument,
+                                           self.bars_data_1d[instrument], Interval.ONE_DAY)
 
                         # Reset defaultdict
                         self.ticks_data = []

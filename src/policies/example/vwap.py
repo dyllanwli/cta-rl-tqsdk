@@ -2,7 +2,7 @@
 #  -*- coding: utf-8 -*-
 
 import datetime
-from tqsdk2 import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
+from tqsdk import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
 from .base import BasePolicy
 
 
