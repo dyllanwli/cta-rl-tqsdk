@@ -5,7 +5,7 @@ from API import API
 # from policies.load_policy import LoadPolicy
 from dao.mongo import MongoDAO
 
-from tqsdk import TqApi
+from tqsdk2 import TqApi
 import wandb
 
 

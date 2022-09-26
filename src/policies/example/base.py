@@ -1,6 +1,6 @@
 from datetime import datetime
-from tqsdk import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
-from tqsdk.objs import Account
+from tqsdk2 import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
+from tqsdk2.objs import Account
 from contextlib import closing
 
 import wandb

@@ -8,9 +8,9 @@ from pymongo import MongoClient, ReplaceOne
 from pymongo.database import Database
 
 import pandas as pd
-from tqsdk import TqApi, TqAuth, TqSim, TqBacktest
-from tqsdk.objs import Quote, Account, Position
-from tqsdk.tafunc import time_to_datetime, time_to_str
+from tqsdk2 import TqApi, TqAuth, TqSim, TqBacktest
+from tqsdk2.objs import Quote, Account, Position
+from tqsdk2.tafunc import time_to_datetime, time_to_str
 
 from utils import SETTINGS, Interval
 from commodity import Commodity

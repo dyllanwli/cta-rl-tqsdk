@@ -3,8 +3,8 @@
 
 import pandas as pd
 from contextlib import closing
-from tqsdk import TqApi, TqBacktest, BacktestFinished, TargetPosTask
-from tqsdk.tafunc import sma, ema2, trma, time_to_datetime
+from tqsdk2 import TqApi, TqBacktest, BacktestFinished, TargetPosTask
+from tqsdk2.tafunc import sma, ema2, trma, time_to_datetime
 from sklearn.ensemble import RandomForestClassifier
 
 from .base import BasePolicy

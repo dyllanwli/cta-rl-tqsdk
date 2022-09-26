@@ -1,10 +1,10 @@
 
 from datetime import datetime
 from functools import reduce
-from tqsdk import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
+from tqsdk2 import TqApi, TargetPosTask, TqBacktest, TqSim, BacktestFinished
 from .base import BasePolicy
 
-from tqsdk.tafunc import time_to_datetime
+from tqsdk2.tafunc import time_to_datetime
 import wandb
 
 

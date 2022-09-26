@@ -1,5 +1,5 @@
 from utils import SETTINGS
-from tqsdk import TqApi, TqAuth
+from tqsdk2 import TqApi, TqAuth
 
 
 class API:
