@@ -1,22 +1,36 @@
+from datetime import date
 from pprint import pprint
-from .envs.futures_env_v1 import FuturesEnvV1
+
 import ray
 from ray.tune.registry import register_env
 from ray.rllib.agents import ppo
+from ray.tune.integration.wandb import WandbLoggerCallback
+
+from .envs.futures_env_v1 import FuturesEnvV1
+from .envs.constant import EnvConfig
+
+from tqsdk import TqApi, TqAuth, TqBacktest
+
 
 
 class RLTrainer:
-    def __init__(self, config):
-        self._set_config(config)
+    def __init__(self, auth: TqAuth):
 
+        backtest = TqBacktest(start_dt=date(2021, 1, 1), end_dt=date(2021, 1, 10))
+
+        self.env_config = EnvConfig(
+            auth=auth,
+            symbol_name="cotton",
+            backtest = backtest,
+            initial_cash=200000,
+            live_market=False,
+        )
+        
         register_env("FuturesEnv-v1", lambda config: FuturesEnvV1(config))
-
-    def _set_config(self, config):
-        self.config = config
 
     def train(self):
         ray.init()
-        config = self.config
+        config = ppo.DEFAULT_CONFIG.copy()
         config["env"] = "FuturesEnv-v1"
         config["env_config"] = self.config
         config["num_workers"] = 1
@@ -25,14 +39,11 @@ class RLTrainer:
         config["num_cpus_for_driver"] = 1
         config["framework"] = "torch"
         config["log_level"] = "DEBUG"
-        # config["callbacks"] = {
-        #     "on_episode_start": on_episode_start,
-        #     "on_episode_step": on_episode_step,
-        #     "on_episode_end": on_episode_end,
-        #     "on_sample_end": on_sample_end,
-        #     "on_train_result": on_train_result,
-        #     "on_postprocess_traj": on_postprocess_traj,
-        # }
+        config["callbacks"] = WandbLoggerCallback(
+            project="tqrl-dev",
+            log_config=True,
+        )
+        
         config["evaluation_interval"] = 1
         config["evaluation_num_episodes"] = 1
         config["evaluation_config"] = {

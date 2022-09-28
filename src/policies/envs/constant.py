@@ -1,7 +1,11 @@
 import copy
 import weakref
 from collections.abc import MutableMapping
-from tqsdk import TqApi, TqSim, TqBacktest, BacktestFinished
+from typing import List
+from datetime import date
+
+from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount
+
 
 class Entity(MutableMapping):
     def _instance_entity(self, path):
@@ -35,7 +39,25 @@ class Entity(MutableMapping):
 
 class EnvConfig(Entity):
     # env config is a entity
-    def __init__(self, api: TqApi, ):
-        pass
+    def __init__(self, 
+        auth: TqAuth,
+        symbols: List[str],
+        backtest: TqBacktest = None,
+        live_market: bool = False,
+        live_account: TqAccount = None,
+    ):
+        self.auth: TqAuth = auth
+        self.symbols: List[str] = symbols
+        self.backtest: TqBacktest = backtest
+        self.live_market: bool = live_market
+        self.live_account: TqAccount = live_account
+
+        # other config params
+        self.init_balance: float = 0.0
+        self.max_volume: int = 10
+        self.trade_position_ratio_limit: float = 0.9
+
+
+
 
 

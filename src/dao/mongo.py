@@ -40,7 +40,7 @@ class MongoDAO:
         self._init_collection('bar', Interval.FIFTEEN_MIN)
         self._init_collection('bar', Interval.THIRTY_MIN)
         self._init_collection('bar', Interval.ONE_HOUR)
-        self._init_collection('bar', Interval.FOUR_HOUR)
+        # self._init_collection('bar', Interval.FOUR_HOUR)
         self._init_collection('bar', Interval.ONE_DAY)
         self._init_collection('tick', Interval.TICK)
 
@@ -86,6 +86,7 @@ class MongoDAO:
             return
         collection = self.db['bar_' + interval.value]
         requests: List[ReplaceOne] = []
+        print("save bar data: ", symbol, instrument_id, interval)
         for bar in bars:
             bar_dict = bar.to_dict()
             bar_dict['datetime'] = time_to_datetime(bar_dict['datetime'])
@@ -106,8 +107,8 @@ class MongoDAO:
             return
         collection = self.db['tick_' + Interval.TICK.value]
         requests: List[ReplaceOne] = []
+        print("save tick data: ", symbol, instrument_id)
         for tick in ticks:
-            print(tick)
             tick_dict = tick.to_dict()
             tick_dict['datetime'] = time_to_datetime(tick_dict['datetime'])
             tick_dict['underlying_symbol'] = symbol
@@ -146,7 +147,7 @@ class MongoDAO:
         if start_dt and end_dt:
             print("backtest mode")
             backtest = TqBacktest(start_dt=start_dt, end_dt=end_dt)
-            self.account = TqSim(init_balance=500000)
+            self.account = TqSim(init_balance=1000000)
             self.api = TqApi(auth=auth, backtest=backtest,
                              account=self.account)
         else:
@@ -175,7 +176,7 @@ class MongoDAO:
         # Initialize TqApi
         self.setup(auth, start_dt, end_dt)
 
-        self.ticks_data = list()
+        self.ticks_data = defaultdict(list)
         self.bars_data_1m = defaultdict(list)
         self.bars_data_5m = defaultdict(list)
         self.bars_data_15m = defaultdict(list)
@@ -195,36 +196,36 @@ class MongoDAO:
                     iqt = instrument_quotes[instrument]
                     underlying_symbol = iqt.underlying_symbol
 
-                    if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
-                        self.ticks_data.append(
-                            self.tick_data[instrument].iloc[-2])
-
-                    if self.api.is_changing(iqt, "underlyinself.tick_datag_symbol"):
+                    if self.api.is_changing(iqt, "underlying_symbol"):
                         self.update_bar_data_subscribe(
                             instrument, instrument_quotes)
 
+                    if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
+                        self.ticks_data[instrument].append(
+                            self.tick_data[instrument].iloc[-2])
+
                     if self.api.is_changing(self.bar_data_1m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1m.append(
+                        self.bars_data_1m[instrument].append(
                             self.bar_data_1m[instrument].iloc[-2])
 
                     if self.api.is_changing(self.bar_data_5m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_5m.append(
+                        self.bars_data_5m[instrument].append(
                             self.bar_data_1m[instrument].iloc[-2])
 
                     if self.api.is_changing(self.bar_data_15m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_15m.append(
+                        self.bars_data_15m[instrument].append(
                             self.bar_data_15m[instrument].iloc[-2])
 
                     if self.api.is_changing(self.bar_data_30m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_30m.append(
+                        self.bars_data_30m[instrument].append(
                             self.bar_data_30m[instrument].iloc[-2])
 
                     if self.api.is_changing(self.bar_data_1h[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1h.append(
+                        self.bars_data_1h[instrument].append(
                             self.bar_data_1h[instrument].iloc[-2])
 
                     if self.api.is_changing(self.bar_data_1d[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1d.append(
+                        self.bars_data_1d[instrument].append(
                             self.bar_data_1d[instrument].iloc[-2])
 
                         # save data by day to database
@@ -244,7 +245,7 @@ class MongoDAO:
                                            self.bars_data_1d[instrument], Interval.ONE_DAY)
 
                         # Reset defaultdict
-                        self.ticks_data = []
+                        self.ticks_data[instrument] = []
                         self.bars_data_1m[instrument] = []
                         self.bars_data_5m[instrument] = []
                         self.bars_data_15m[instrument] = []
