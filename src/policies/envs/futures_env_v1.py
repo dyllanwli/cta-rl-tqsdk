@@ -24,21 +24,31 @@ class FuturesEnvV1(gym.Env):
         self.seed(42)
 
         self.reset()
+    
+    def _update_subscription(self):
+        self.underlying_symbol = self.instrument_quote.underlying_symbol
+        self.bar_1m = self.api.get_kline_serial(
+            self.underlying_symbol, 60, data_length=self.data_length['bar_1m'])
+        self.bar_5m = self.api.get_kline_serial(
+            self.underlying_symbol, 300, data_length=self.data_length['bar_5m'])
+        
+        self.ticks = self.api.get_tick_serial(self.underlying_symbol, data_length=self.data_length['ticks'])
+
 
     def _set_config(self, config: EnvConfig):
         cmod = Commodity()
-        config = config
-        self._set_account(config)
         self.symbol = cmod.get_instrument_name(config.symbols[0])
         self.instrument_quote = self.api.get_quote(self.symbol)
-        self.underlying_symbol = self.instrument_quote.underlying_symbol
-        self.action_space = spaces.Dict({
-            "offset": spaces.Discrete(3),
-            "volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32),
-            "price_type": spaces.Discrete(2),
-        })
-        self.observation_space = spaces.Box(low=0, high=100000, shape=(1,), dtype=np.float32)
 
+        self.data_length = config.data_length
+
+        self.underlying_symbol = self.instrument_quote.underlying_symbol
+        self.action_space = spaces.Box(
+            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32)
+        self.observation_space = spaces.Dict({
+            "curremt_volume": spaces.Box(low=-config.max_volume, high=-config.max_volume, shape=(1,), dtype=np.int32),
+            "OHLCV": spaces.Box(low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32),
+        })
 
     def _set_account(self, config: EnvConfig):
         """
@@ -60,16 +70,16 @@ class FuturesEnvV1(gym.Env):
                 print("sim mode")
                 self.account = TqSim(init_balance=config.init_balance)
                 self.api = TqApi(auth=config.auth)
-                
+
     def get_account_info(self):
         pass
 
     def insert_order(self, action):
         pass
 
-
     def step(self, action):
-        insert_order = InsertOrderUntilAllTradedTask(self.api, self.symbol, action)
+        insert_order = InsertOrderUntilAllTradedTask(
+            self.api, self.symbol, action)
         self.api.wait_update()
 
     def reset(self):

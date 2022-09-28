@@ -1,7 +1,7 @@
 import copy
 import weakref
 from collections.abc import MutableMapping
-from typing import List
+from typing import List, Dict
 from datetime import date
 
 from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount
@@ -53,9 +53,20 @@ class EnvConfig(Entity):
         self.live_account: TqAccount = live_account
 
         # other config params
-        self.init_balance: float = 0.0
-        self.max_volume: int = 10
+        self.init_balance: float = 100000
+        self.max_volume: int = 30
         self.trade_position_ratio_limit: float = 0.9
+
+        self.data_length: Dict[str, int] = {
+            "ticks": 200,
+            "bar_1m": 200,
+            "bar_5m": 200,
+            "bar_15m": 200,
+            "bar_30m": 200,
+            "bar_60m": 200,
+            "bar_1d": 200,
+        }
+
 
 
 
