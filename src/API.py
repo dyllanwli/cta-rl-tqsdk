@@ -3,18 +3,18 @@ from tqsdk import TqApi, TqAuth, TqAccount
 
 
 class API:
-    def __init__(self, account: str = 'a1'):
-        self.config = SETTINGS["account"][account]
-        self.auth = TqAuth(self.config['username'], self.config['pass'])
-        self.live_config = self.config['live_account']
+    def __init__(self, account: str = 'a1',):
+        account_settings = SETTINGS['account'][account]
+        live_account_settings = SETTINGS['live_account'][account]
+        self.auth = TqAuth(account_settings['username'], account_settings['pass'])
         self.live_account = TqAccount(
-            self.live_config['broker_id'],
-            self.live_config['account_id'],
-            self.live_config['password'])
+            live_account_settings['broker_id'],
+            live_account_settings['account_id'],
+            live_account_settings['password'])
 
-    def test(self, symbol: str = 'CZCE.CF301'):
+    def test(self, symbol: str = 'SHFE.ag2212'):
         api = TqApi(auth=self.auth)
-        quote = api.get_quote(symbol)
+        # quote = api.get_quote(symbol)
         tick = api.get_tick_serial(symbol)
         bar_1m = api.get_kline_serial(symbol, 60)
         bar_5m = api.get_kline_serial(symbol, 300)
@@ -22,4 +22,8 @@ class API:
         bar_1d = api.get_kline_serial(symbol, 86400)
         while True:
             api.wait_update()
-            print(quote.datetime, quote.last_price)
+            print("tick", tick.shape, tick.iloc[-1])
+            # print("bar_1m", bar_1m.shape, bar_1m.iloc[-1])
+            # print("bar_5m", bar_5m.shape, bar_5m.iloc[-1])
+            # print("bar_30m", bar_30m.shape, bar_30m.iloc[-1])
+            # print("bar_1d", bar_1d.shape, bar_1d.iloc[-1])

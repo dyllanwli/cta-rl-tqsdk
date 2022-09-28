@@ -13,8 +13,9 @@ commodity:
   low_sulphur_fuel_oil: SHFE.lu # 低硫燃料油
   natural_rubber: SHFE.ru # 天然橡胶
   rebar: SHFE.rb # 螺纹钢
-  sliver: SHFE.ag # 白银
+  sliver: SHFE.ag # 沪银
   copper: SHFE.cu # 沪铜
+  curd_oil: SHFE.sc # 原油
 
   styrene: DCE.eb # 苯乙烯
   bean_2: DCE.b # 豆二

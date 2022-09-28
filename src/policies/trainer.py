@@ -1,5 +1,6 @@
 from datetime import date
 from pprint import pprint
+import logging
 
 import ray
 from ray.tune.registry import register_env
@@ -29,7 +30,7 @@ class RLTrainer:
         register_env("FuturesEnv-v1", lambda config: FuturesEnvV1(config))
 
     def train(self):
-        ray.init()
+        ray.init(logging_level=logging.INFO)
         config = ppo.DEFAULT_CONFIG.copy()
         config["env"] = "FuturesEnv-v1"
         config["env_config"] = self.config

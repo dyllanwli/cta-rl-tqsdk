@@ -61,7 +61,6 @@ class EnvConfig(Entity):
             "ticks": 200,
             "bar_1m": 200,
             "bar_5m": 200,
-            "bar_15m": 200,
             "bar_30m": 200,
             "bar_60m": 200,
             "bar_1d": 200,
