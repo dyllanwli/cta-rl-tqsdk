@@ -1,5 +1,6 @@
 from datetime import date, datetime
-
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 from API import API
 # from commodity import Commodity
 # from policies.load_policy import LoadPolicy
