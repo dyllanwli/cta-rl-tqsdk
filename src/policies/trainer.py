@@ -15,30 +15,43 @@ from .algos import Algos
 from .envs.futures_env_v1 import FuturesEnvV1
 from .envs.constant import EnvConfig
 
-from tqsdk import TqApi, TqAuth, TqBacktest
+from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
 
 
 class RLTrainer:
-    def __init__(self, auth: TqAuth):
+    def __init__(self, auth: TqAut):
 
         backtest = TqBacktest(start_dt=date(2021, 1, 1),
                               end_dt=date(2021, 1, 10))
 
         self.env_config = {"cfg": EnvConfig(
-            auth=auth,
+            api=self._set_account(auth, backtest, init_balance=200000),
             symbols=["cotton"],
-            backtest=backtest,
-            live_market=False,
         )}
         self.env = FuturesEnvV1
 
         ray.init(logging_level=logging.INFO)
 
+    def _set_account(self, auth, backtest, init_balance=10000000,
+                     live_market=False, live_account=None):
+        if backtest is not None:
+            print("Backtest mode")
+            return TqApi(auth=auth, backtest=backtest,
+                         account=TqSim(init_balance=init_balance))
+        else:
+            if live_market:
+                print("Live market mode")
+                return TqApi(account=live_account, auth=auth)
+            else:
+                print("Sim mode")
+                return TqApi(auth=auth, account=TqSim(
+                    init_balance=init_balance))
+
     def env_creator(self, config):
         return FuturesEnvV1(config)
 
     def train(self, agent_name: str = "ppo"):
-        trainer = Agent(name=agent_name, env=self.env,
+        trainer = Algos(name=agent_name, env=self.env,
                         env_config=self.env_config).build()
         wandb.init(project="futures-trading", name="train_" +
                    datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
@@ -52,7 +65,7 @@ class RLTrainer:
         ray.shutdown()
 
     def run(self, checkpoint_path, agent_name: str = "ppo", max_episodes: int = 1000):
-        trainer = Agent(name=agent_name, env=self.env,
+        trainer = Algos(name=agent_name, env=self.env,
                         env_config=self.env_config).build()
         trainer.restore(checkpoint_path)
         print("Restored from checkpoint path", checkpoint_path)

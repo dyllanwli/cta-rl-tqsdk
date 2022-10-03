@@ -27,7 +27,7 @@ class FuturesEnvV1(gym.Env):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
 
-        self._skip_env_checking = True
+        self._skip_env_checking = False
         self._set_config(config)
         self.seed(42)
 
@@ -54,14 +54,17 @@ class FuturesEnvV1(gym.Env):
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
         print("Setting config")
-        self._set_account(config)
+        self.api = config.api
+        self.account = self.api.get_account()
+        # Set target position task
+        self.target_pos_task = None
         symbol = get_symbols_by_names(config)[0]
         self.instrument_quote = self.api.get_quote(symbol)
 
         # Account and API
         self.data_length = config.data_length
         self.underlying_symbol = self.instrument_quote.underlying_symbol
-        self.balance = config.init_balance
+        self.balance = self.account.static_balance
 
         # RL config
         self.max_steps = config.max_steps
@@ -77,29 +80,6 @@ class FuturesEnvV1(gym.Env):
             "bar_60m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float32),
             "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float32),
         })
-
-    def _set_account(self, config: EnvConfig):
-        """
-        Set account and API for TqApi
-        """
-        if config.backtest is not None:
-            # backtest
-            print("Backtest mode")
-            self.api: TqApi = TqApi(auth=config.auth, backtest=config.backtest,
-                                    account=TqSim(init_balance=config.init_balance))
-        else:
-            # live or sim
-            if config.live_market:
-                print("Live market mode")
-                self.api = TqApi(account=config.live_account, auth=config.auth)
-            else:
-                print("Sim mode")
-                self.api = TqApi(auth=config.auth, account=TqSim(
-                    init_balance=config.init_balance))
-        self.account = self.api.get_account()
-
-        # Set target position task
-        self.target_pos_task = None
 
     def _reward_function(self):
         # Reward is the change of balance
