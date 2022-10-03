@@ -3,15 +3,15 @@ from .ppo import PPOConfig
 import gym
 
 
-class Agent:
+class Algos:
     def __init__(self, name: str, env: gym.Env, env_config):
         if name == "ppo":
-            self.agent = PPOConfig(env=env, env_config=env_config)
+            self.algo = PPOConfig(env=env, env_config=env_config)
         else:
             raise ValueError("Not found")
 
     def build(self) -> Algorithm:
-        return self.agent.build()
+        return self.algo.build()
 
     def config(self):
-        return self.agent.config
+        return self.algo.config

@@ -11,7 +11,7 @@ class EnvConfig(EnvContext):
         backtest: TqBacktest = None,
         live_market: bool = False,
         live_account: TqAccount = None,
-        max_steps: int = 3000, # max actions per episode
+        max_steps: int = 30000, # max actions per episode
     ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols

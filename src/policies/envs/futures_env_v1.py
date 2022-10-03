@@ -103,7 +103,8 @@ class FuturesEnvV1(gym.Env):
 
     def _reward_function(self):
         # Reward is the change of balance
-        reward = self.account.static_balance - self.balance
+        pnl = self.account.static_balance - self.balance
+        reward = pnl / self.balance
         self.balance = self.account.static_balance
         return reward
 

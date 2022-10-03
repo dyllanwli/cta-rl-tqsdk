@@ -15,8 +15,10 @@ class PPOConfig:
             "num_gpus": 1,
             "framework": "tf2",
             "horizon": 1000000, # horizon need to be set 
+            "use_gae": True,
+            "lr": 0.00001,
             "model": {
-                "fcnet_hiddens": [64, 64],
+                "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
             },
         }

@@ -11,7 +11,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a4')
+    tqAPI = API(account='a1')
     # tqAPI.test()
     # cmod = Commodity()
     # symbol = cmod.get_instrument_name('egg')

@@ -11,7 +11,7 @@ from ray.tune.registry import register_env
 from ray.tune.integration.wandb import WandbLoggerCallback
 from ray.rllib.algorithms.registry import get_algorithm_class
 
-from .agents import Agent
+from .algos import Algos
 from .envs.futures_env_v1 import FuturesEnvV1
 from .envs.constant import EnvConfig
 
