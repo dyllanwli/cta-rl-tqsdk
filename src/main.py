@@ -1,6 +1,4 @@
 from datetime import date, datetime
-import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 from API import API
 # from commodity import Commodity
 # from policies.load_policy import LoadPolicy
@@ -12,7 +10,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a1')
+    tqAPI = API(account='a2')
     # tqAPI.test()
     # cmod = Commodity()
     # symbol = cmod.get_instrument_name('egg')

@@ -112,23 +112,23 @@ class FuturesEnvV1(gym.Env):
         now = time_to_datetime(self.instrument_quote.datetime)
         static_balance = self.account.static_balance
         ticks = self.ticks[['last_price', 'average', 'volume', 'open_interest', 'ask_price1', 'ask_volume1',
-                            'bid_price1', 'bid_volume1', ]].to_numpy()
+                            'bid_price1', 'bid_volume1', ]].to_numpy(dtype=np.float32)
         bar_1m = self.bar_1m[['open', 'high',
-                              'low', 'close', 'volume']].to_numpy()
+                              'low', 'close', 'volume']].to_numpy(dtype=np.float32)
         bar_60m = self.bar_60m[['open', 'high',
-                                'low', 'close', 'volume']].to_numpy()
+                                'low', 'close', 'volume']].to_numpy(dtype=np.float32)
         bar_1d = self.bar_1d[['open', 'high',
-                              'low', 'close', 'volume']].to_numpy()
-        return {
-            "static_balance": np.array([static_balance]),
-            "last_volume": np.array([self.last_volume]),
-            "hour": np.array([now.hour]),
-            "minute": np.array([now.minute]),
+                              'low', 'close', 'volume']].to_numpy(dtype=np.float32)
+        return dict({
+            "static_balance": np.array([static_balance], dtype=np.float32),
+            "last_volume": np.array([self.last_volume], dtype=np.int32),
+            "hour": np.array([now.hour], dtype=np.int32),
+            "minute": np.array([now.minute], dtype=np.int32),
             "ticks": ticks,
             "bar_1m": bar_1m,
             "bar_60m": bar_60m,
             "bar_1d": bar_1d
-        }
+        })
 
     def step(self, action: int):
         try:
@@ -165,6 +165,7 @@ class FuturesEnvV1(gym.Env):
         state = self._get_state()
         now = time_to_datetime(self.instrument_quote.datetime)
         self.log_info(now)
+        # np.save("state.npy", state) # debug
         return state
 
     def log_info(self, now: datetime):

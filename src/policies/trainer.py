@@ -32,7 +32,7 @@ class RLTrainer:
         )}
         self.env = FuturesEnvV1
 
-        ray.init(logging_level=logging.INFO)
+        ray.init(logging_level=logging.ERROR, log_to_driver=False)
 
     def env_creator(self, config):
         return FuturesEnvV1(config)
