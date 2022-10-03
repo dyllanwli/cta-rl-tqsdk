@@ -23,9 +23,9 @@ class FuturesEnvV1(gym.Env):
     """
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, config: EnvConfig):
+    def __init__(self, config):
         super(gym.Env, self).__init__()
-
+        config: EnvConfig = config['cfg']
         self._set_config(config)
         self.seed(42)
 
@@ -50,6 +50,7 @@ class FuturesEnvV1(gym.Env):
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
+        print("Setting config")
         self._set_account(config)
         symbol = get_symbols_by_names(config)[0]
         self.instrument_quote = self.api.get_quote(symbol)
@@ -80,20 +81,22 @@ class FuturesEnvV1(gym.Env):
         """
         if config.backtest is not None:
             # backtest
-            print("backtest mode")
-            self.account = TqSim(init_balance=config.init_balance)
+            print("Backtest mode")
             self.api: TqApi = TqApi(auth=config.auth, backtest=config.backtest,
-                                    account=self.account)
+                                    account=TqSim(init_balance=config.init_balance))
         else:
             # live or sim
             if config.live_market:
-                print("live market mode")
-                self.api = TqApi(config.live_account, auth=config.auth)
-                self.account = self.api.get_account()
+                print("Live market mode")
+                self.api = TqApi(account=config.live_account, auth=config.auth)
             else:
-                print("sim mode")
-                self.account = TqSim(init_balance=config.init_balance)
-                self.api = TqApi(auth=config.auth)
+                print("Sim mode")
+                self.api = TqApi(auth=config.auth, account=TqSim(
+                    init_balance=config.init_balance))
+        self.account = self.api.get_account()
+
+        # Set target position task
+        self.target_pos_task = None
 
     def _reward_function(self):
         # Reward is the change of balance

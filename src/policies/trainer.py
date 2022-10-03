@@ -24,20 +24,22 @@ class RLTrainer:
         backtest = TqBacktest(start_dt=date(2021, 1, 1),
                               end_dt=date(2021, 1, 10))
 
-        self.env_config = EnvConfig(
+        self.env_config = {"cfg": EnvConfig(
             auth=auth,
             symbols=["cotton"],
             backtest=backtest,
             live_market=False,
-        )
-        self.env_name = "FuturesEnv-v1"
-
-        register_env(self.env_name, lambda config: FuturesEnvV1(config))
+        )}
+        self.env = FuturesEnvV1
 
         ray.init(logging_level=logging.INFO)
 
-    def train(self, agent: str = "ppo"):
-        trainer = Agent(agent).build(env=self.env_name)
+    def env_creator(self, config):
+        return FuturesEnvV1(config)
+
+    def train(self, agent_name: str = "ppo"):
+        trainer = Agent(name=agent_name, env=self.env,
+                        env_config=self.env_config).build()
         wandb.init(project="futures-trading", name="train_" +
                    datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         for i in range(10000):
@@ -49,8 +51,9 @@ class RLTrainer:
                 print("checkpoint saved at", checkpoint)
         ray.shutdown()
 
-    def run(self, checkpoint_path, agent: str = "ppo", max_episodes: int = 1000):
-        trainer = Agent(agent).build(env=self.env_name)
+    def run(self, checkpoint_path, agent_name: str = "ppo", max_episodes: int = 1000):
+        trainer = Agent(name=agent_name, env=self.env,
+                        env_config=self.env_config).build()
         trainer.restore(checkpoint_path)
         print("Restored from checkpoint path", checkpoint_path)
 
