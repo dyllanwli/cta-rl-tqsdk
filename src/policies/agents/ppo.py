@@ -14,6 +14,7 @@ class PPOConfig:
             "num_envs_per_worker": 1,
             "num_gpus": 1,
             "framework": "tf2",
+            "horizon": 1000000, # horizon need to be set 
             "model": {
                 "fcnet_hiddens": [64, 64],
                 "fcnet_activation": "relu",

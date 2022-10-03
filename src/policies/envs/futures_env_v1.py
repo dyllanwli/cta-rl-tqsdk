@@ -26,6 +26,8 @@ class FuturesEnvV1(gym.Env):
     def __init__(self, config):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
+
+        self._skip_env_checking = True
         self._set_config(config)
         self.seed(42)
 
@@ -34,11 +36,12 @@ class FuturesEnvV1(gym.Env):
     def _update_subscription(self):
         # update quote subscriptions when underlying_symbol changes
         if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
+            print("Updating subscription")
             self.underlying_symbol = self.instrument_quote.underlying_symbol
             if self.target_pos_task is not None:
                 self.target_pos_task.set_target_volume(0)
             self.target_pos_task = TargetPosTask(
-                self.api, self.underlying_symbol, offset_priority="昨开今")
+                self.api, self.underlying_symbol, offset_priority="昨今开")
             self.ticks = self.api.get_tick_serial(
                 self.underlying_symbol, data_length=self.data_length['ticks'])
             self.bar_1m = self.api.get_kline_serial(
@@ -65,14 +68,14 @@ class FuturesEnvV1(gym.Env):
         self.action_space = spaces.Box(
             low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32)
         self.observation_space = spaces.Dict({
-            "static_balance": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
+            "static_balance": spaces.Box(low=0, high=np.inf, shape=(1,), dtype=np.float32),
             "last_volume": spaces.Box(low=-config.max_volume, high=-config.max_volume, shape=(1,), dtype=np.int32),
             "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int32),
             "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int32),
-            "ticks": spaces.Box(low=0, high=np.inf, shape=(8, self.data_length['ticks']), dtype=np.float32),
-            "bar_1m": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_1m']), dtype=np.float32),
-            "bar_60m": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_60m']), dtype=np.float32),
-            "bar_1d": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_1d']), dtype=np.float32),
+            "ticks": spaces.Box(low=0, high=np.inf, shape=(self.data_length['ticks'], 8), dtype=np.float32),
+            "bar_1m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float32),
+            "bar_60m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float32),
+            "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float32),
         })
 
     def _set_account(self, config: EnvConfig):
@@ -116,10 +119,10 @@ class FuturesEnvV1(gym.Env):
         bar_1d = self.bar_1d[['open', 'high',
                               'low', 'close', 'volume']].to_numpy()
         return {
-            "static_balance": static_balance,
-            "last_volume": self.last_volume,
-            "hour": now.hour,
-            "minute": now.minute,
+            "static_balance": np.array([static_balance]),
+            "last_volume": np.array([self.last_volume]),
+            "hour": np.array([now.hour]),
+            "minute": np.array([now.minute]),
             "ticks": ticks,
             "bar_1m": bar_1m,
             "bar_60m": bar_60m,
@@ -152,6 +155,7 @@ class FuturesEnvV1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
+        print("Resetting")
         self.done = False
         self.steps = 0
         self.last_volume = 0  # last target position volume

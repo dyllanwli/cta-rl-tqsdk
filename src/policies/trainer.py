@@ -57,7 +57,7 @@ class RLTrainer:
         trainer.restore(checkpoint_path)
         print("Restored from checkpoint path", checkpoint_path)
 
-        env = gym.make(self.env_name, config=self.env_config)
+        env = gym.make(self.env, config=self.env_config)
         obs = env.reset()
 
         wandb.init(project="futures-trading", name="run_" +

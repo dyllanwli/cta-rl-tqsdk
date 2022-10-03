@@ -3,14 +3,17 @@ from tqsdk import TqApi, TqAuth, TqAccount
 
 
 class API:
-    def __init__(self, account: str = 'a1',):
+    def __init__(self, account: str = 'a1', live_account: str = None):
         account_settings = SETTINGS['account'][account]
-        live_account_settings = SETTINGS['live_account'][account]
-        self.auth = TqAuth(account_settings['username'], account_settings['pass'])
-        self.live_account = TqAccount(
-            live_account_settings['broker_id'],
-            live_account_settings['account_id'],
-            live_account_settings['password'])
+        self.auth = TqAuth(
+            account_settings['username'], account_settings['pass'])
+
+        if live_account is not None:
+            live_account_settings = SETTINGS['live_account'][live_account]
+            self.live_account = TqAccount(
+                live_account_settings['broker_id'],
+                live_account_settings['account_id'],
+                live_account_settings['password'])
 
     def test(self, symbol: str = 'SHFE.ag2212'):
         api = TqApi(auth=self.auth)
