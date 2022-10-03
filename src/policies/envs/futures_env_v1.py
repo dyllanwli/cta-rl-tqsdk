@@ -8,12 +8,11 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 from .constant import EnvConfig
-from .tools import get_symbol_by_name
+from .tools import get_symbols_by_names
 
-from tqsdk import TargetPosTask, TqBacktest, TqSim, TqApi, TqAccount
+from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account
 from tqsdk.tafunc import time_to_datetime
-
 
 
 class FuturesEnvV1(gym.Env):
@@ -33,30 +32,43 @@ class FuturesEnvV1(gym.Env):
         self.reset()
 
     def _update_subscription(self):
-        self.underlying_symbol = self.instrument_quote.underlying_symbol
-        self.ticks = self.api.get_tick_serial(
-            self.underlying_symbol, data_length=self.data_length['ticks'])
-        self.bar_1m = self.api.get_kline_serial(
-            self.underlying_symbol, 60, data_length=self.data_length['bar_1m'])
-        self.bar_60m = self.api.get_kline_serial(
-            self.underlying_symbol, 3600, data_length=self.data_length['bar_60m'])
-        self.bar_1d = self.api.get_kline_serial(
-            self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
+        # update quote subscriptions when underlying_symbol changes
+        if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
+            self.underlying_symbol = self.instrument_quote.underlying_symbol
+            if self.target_pos_task is not None:
+                self.target_pos_task.set_target_volume(0)
+            self.target_pos_task = TargetPosTask(
+                self.api, self.underlying_symbol, offset_priority="昨开今")
+            self.ticks = self.api.get_tick_serial(
+                self.underlying_symbol, data_length=self.data_length['ticks'])
+            self.bar_1m = self.api.get_kline_serial(
+                self.underlying_symbol, 60, data_length=self.data_length['bar_1m'])
+            self.bar_60m = self.api.get_kline_serial(
+                self.underlying_symbol, 3600, data_length=self.data_length['bar_60m'])
+            self.bar_1d = self.api.get_kline_serial(
+                self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
 
     def _set_config(self, config: EnvConfig):
-        self.symbol = get_symbol_by_name(config.symbols[0])
-        self.instrument_quote = self.api.get_quote(self.symbol)
+        # Subscribe instrument quote
+        self._set_account(config)
+        symbol = get_symbols_by_names(config)[0]
+        self.instrument_quote = self.api.get_quote(symbol)
 
+        # Account and API
         self.data_length = config.data_length
-
         self.underlying_symbol = self.instrument_quote.underlying_symbol
+        self.balance = config.init_balance
+
+        # RL config
+        self.max_steps = config.max_steps
         self.action_space = spaces.Box(
             low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32)
         self.observation_space = spaces.Dict({
-            "curremt_volume": spaces.Box(low=-config.max_volume, high=-config.max_volume, shape=(1,), dtype=np.int32),
+            "static_balance": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
+            "last_volume": spaces.Box(low=-config.max_volume, high=-config.max_volume, shape=(1,), dtype=np.int32),
             "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int32),
             "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int32),
-            "ticks": spaces.Box(low=0, high=np.inf, shape=(9, self.data_length['ticks']), dtype=np.float32),
+            "ticks": spaces.Box(low=0, high=np.inf, shape=(8, self.data_length['ticks']), dtype=np.float32),
             "bar_1m": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_1m']), dtype=np.float32),
             "bar_60m": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_60m']), dtype=np.float32),
             "bar_1d": spaces.Box(low=0, high=np.inf, shape=(5, self.data_length['bar_1d']), dtype=np.float32),
@@ -66,12 +78,12 @@ class FuturesEnvV1(gym.Env):
         """
         Set account and API for TqApi
         """
-        if config.backtest:
+        if config.backtest is not None:
             # backtest
             print("backtest mode")
             self.account = TqSim(init_balance=config.init_balance)
-            self.api = TqApi(auth=config.auth, backtest=config.backtest,
-                             account=self.account)
+            self.api: TqApi = TqApi(auth=config.auth, backtest=config.backtest,
+                                    account=self.account)
         else:
             # live or sim
             if config.live_market:
@@ -83,44 +95,90 @@ class FuturesEnvV1(gym.Env):
                 self.account = TqSim(init_balance=config.init_balance)
                 self.api = TqApi(auth=config.auth)
 
-    def get_account_info(self):
-        pass
-    
     def _reward_function(self):
-        pass
+        # Reward is the change of balance
+        reward = self.account.static_balance - self.balance
+        self.balance = self.account.static_balance
+        return reward
 
-    def step(self, action):
-        self.api.wait_update()
+    def _get_state(self):
+        now = time_to_datetime(self.instrument_quote.datetime)
+        static_balance = self.account.static_balance
+        ticks = self.ticks[['last_price', 'average', 'volume', 'open_interest', 'ask_price1', 'ask_volume1',
+                            'bid_price1', 'bid_volume1', ]].to_numpy()
+        bar_1m = self.bar_1m[['open', 'high',
+                              'low', 'close', 'volume']].to_numpy()
+        bar_60m = self.bar_60m[['open', 'high',
+                                'low', 'close', 'volume']].to_numpy()
+        bar_1d = self.bar_1d[['open', 'high',
+                              'low', 'close', 'volume']].to_numpy()
+        return {
+            "static_balance": static_balance,
+            "last_volume": self.last_volume,
+            "hour": now.hour,
+            "minute": now.minute,
+            "ticks": ticks,
+            "bar_1m": bar_1m,
+            "bar_60m": bar_60m,
+            "bar_1d": bar_1d
+        }
+
+    def step(self, action: int):
+        try:
+            assert self.action_space.contains(action)
+            self.target_pos_task.set_target_volume(action)
+            self.api.wait_update()
+            self.reward = self._reward_function()
+            state = self._get_state()
+            self.last_volume = action
+            self.steps += 1
+
+            now = time_to_datetime(self.instrument_quote.datetime)
+            self._update_subscription()
+            self.log_info(now)
+            wandb.log(self.info)
+            if self.steps >= self.max_steps:
+                self.done = True
+            return state, self.reward, self.done, self.info
+        except Exception as e:
+            self.target_pos_task.set_target_volume(0)
+            self.api.wait_update()
+            raise e
 
     def reset(self):
         """
         Reset the state if a new day is detected.
         """
+        self.done = False
+        self.steps = 0
+        self.last_volume = 0  # last target position volume
+        self.reward = 0
         self._update_subscription()
+        state = self._get_state()
         now = time_to_datetime(self.instrument_quote.datetime)
-        self.wandb_log(self.account, now)
-    
+        self.log_info(now)
+        return state
 
-    def wandb_log(self, account: Account, now: datetime):
-        wandb.log({
-            # "currency": account.currency,
-            "pre_balance": account.pre_balance,
-            "static_balance": account.static_balance,
-            "balance": account.balance,
-            "available": account.available,
-            "float_profit": account.float_profit,
-            "position_profit": account.position_profit,
-            "close_profit": account.close_profit,
-            "frozen_margin": account.frozen_margin,
-            "margin": account.margin,
-            "frozen_commission": account.frozen_commission,
-            "commission": account.commission,
-            "frozen_premium": account.frozen_premium,
-            "premium": account.premium,
-            "risk_ratio": account.risk_ratio,
-            "market_value": account.market_value,
-            "time": now
-        })
+    def log_info(self, now: datetime):
+        self.info = {
+            "pre_balance": self.account.pre_balance,
+            "static_balance": self.account.static_balance,
+            "balance": self.account.balance,
+            "available": self.account.available,
+            "float_profit": self.account.float_profit,
+            "position_profit": self.account.position_profit,
+            "close_profit": self.account.close_profit,
+            "frozen_margin": self.account.frozen_margin,
+            "margin": self.account.margin,
+            "frozen_commission": self.account.frozen_commission,
+            "commission": self.account.commission,
+            "frozen_premium": self.account.frozen_premium,
+            "premium": self.account.premium,
+            "risk_ratio": self.account.risk_ratio,
+            "market_value": self.account.market_value,
+            "time": now,
+            "reward": self.reward,
+        }
 
     def render(self, mode='human') -> None:
         pass

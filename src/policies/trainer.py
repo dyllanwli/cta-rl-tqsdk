@@ -1,70 +1,75 @@
-from datetime import date
+from datetime import date, datetime
+from math import gamma
 from pprint import pprint
 import logging
 
+import wandb
+import gym
 import ray
-from ray.tune.registry import register_env
-from ray.rllib.agents import ppo
-from ray.tune.integration.wandb import WandbLoggerCallback
 
+from ray.tune.registry import register_env
+from ray.tune.integration.wandb import WandbLoggerCallback
+from ray.rllib.algorithms.registry import get_algorithm_class
+
+from .agents import Agent
 from .envs.futures_env_v1 import FuturesEnvV1
 from .envs.constant import EnvConfig
 
 from tqsdk import TqApi, TqAuth, TqBacktest
 
 
-
 class RLTrainer:
     def __init__(self, auth: TqAuth):
 
-        backtest = TqBacktest(start_dt=date(2021, 1, 1), end_dt=date(2021, 1, 10))
+        backtest = TqBacktest(start_dt=date(2021, 1, 1),
+                              end_dt=date(2021, 1, 10))
 
         self.env_config = EnvConfig(
             auth=auth,
-            symbol_name="cotton",
-            backtest = backtest,
-            initial_cash=200000,
+            symbols=["cotton"],
+            backtest=backtest,
             live_market=False,
         )
-        
-        register_env("FuturesEnv-v1", lambda config: FuturesEnvV1(config))
+        self.env_name = "FuturesEnv-v1"
 
-    def train(self):
+        register_env(self.env_name, lambda config: FuturesEnvV1(config))
+
         ray.init(logging_level=logging.INFO)
-        config = ppo.DEFAULT_CONFIG.copy()
-        config["env"] = "FuturesEnv-v1"
-        config["env_config"] = self.config
-        config["num_workers"] = 1
-        config["num_gpus"] = 0
-        config["num_cpus_per_worker"] = 1
-        config["num_cpus_for_driver"] = 1
-        config["framework"] = "torch"
-        config["log_level"] = "DEBUG"
-        config["callbacks"] = WandbLoggerCallback(
-            project="tqrl-dev",
-            log_config=True,
-        )
-        
-        config["evaluation_interval"] = 1
-        config["evaluation_num_episodes"] = 1
-        config["evaluation_config"] = {
-            "explore": False,
-        }
 
-        trainer = ppo.PPOTrainer(config=config)
-        for i in range(100):
+    def train(self, agent: str = "ppo"):
+        trainer = Agent(agent).build(env=self.env_name)
+        wandb.init(project="futures-trading", name="train_" +
+                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        for i in range(10000):
             print(f"Training iteration {i}")
             result = trainer.train()
             print(pprint(result))
-
-            if i % 10 == 0:
-                checkpoint = trainer.save()
+            if i % 100 == 0:
+                checkpoint = trainer.save(checkpoint_dir="checkpoints")
                 print("checkpoint saved at", checkpoint)
-
         ray.shutdown()
 
-    def evaluate(self):
-        pass
+    def run(self, checkpoint_path, agent: str = "ppo", max_episodes: int = 1000):
+        trainer = Agent(agent).build(env=self.env_name)
+        trainer.restore(checkpoint_path)
+        print("Restored from checkpoint path", checkpoint_path)
+
+        env = gym.make(self.env_name, config=self.env_config)
+        obs = env.reset()
+
+        wandb.init(project="futures-trading", name="run_" +
+                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        num_episodes = 0
+        while num_episodes < max_episodes:
+            action = trainer.compute_single_action(obs)
+
+            obs, reward, done, info = env.step(action)
+            info["reward"] = reward
+            wandb.log(info)
+            if done:
+                num_episodes += 1
+                obs = env.reset()
+        ray.shutdown()
 
     def predict(self):
         pass
