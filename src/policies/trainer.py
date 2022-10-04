@@ -1,15 +1,10 @@
 from datetime import date, datetime
-from math import gamma
 from pprint import pprint
 import logging
 
 import wandb
 import gym
 import ray
-
-from ray.tune.registry import register_env
-from ray.tune.integration.wandb import WandbLoggerCallback
-from ray.rllib.algorithms.registry import get_algorithm_class
 
 from .algos import Algos
 from .envs.futures_env_v1 import FuturesEnvV1
@@ -22,7 +17,7 @@ class RLTrainer:
     def __init__(self, auth: TqAuth):
 
         backtest = TqBacktest(start_dt=date(2021, 1, 1),
-                              end_dt=date(2021, 1, 10))
+                              end_dt=date(2021, 3, 1))
 
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
@@ -32,7 +27,7 @@ class RLTrainer:
         )}
         self.env = FuturesEnvV1
 
-        ray.init(logging_level=logging.ERROR, log_to_driver=False)
+        ray.init(logging_level=logging.ERROR, log_to_driver=False, num_cpus=10, local_mode=True)
 
     def env_creator(self, config):
         return FuturesEnvV1(config)
@@ -40,8 +35,6 @@ class RLTrainer:
     def train(self, agent_name: str = "ppo"):
         trainer = Algos(name=agent_name, env=self.env,
                         env_config=self.env_config).build()
-        wandb.init(project="futures-trading", name="train_" +
-                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         for i in range(10000):
             print(f"Training iteration {i}")
             result = trainer.train()

@@ -1,4 +1,3 @@
-from ray.rllib.algorithms.algorithm import Algorithm
 from .ppo import PPOConfig
 import gym
 
@@ -10,7 +9,7 @@ class Algos:
         else:
             raise ValueError("Not found")
 
-    def build(self) -> Algorithm:
+    def build(self):
         return self.algo.build()
 
     def config(self):

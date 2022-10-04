@@ -13,14 +13,11 @@ class PPOConfig:
             "num_workers": 1,
             "num_envs_per_worker": 1,
             "num_gpus": 1,
-            "framework": "tf2",
+            "num_cpus_per_worker": 10,
+            "framework": "tf",
             "horizon": 1000000, # horizon need to be set 
             "use_gae": True,
             "lr": 0.00001,
-            "model": {
-                "fcnet_hiddens": [256, 256, 256],
-                "fcnet_activation": "relu",
-            },
         }
 
     def build(self) -> PPO:
