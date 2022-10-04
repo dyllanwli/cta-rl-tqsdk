@@ -13,7 +13,6 @@ class PPOConfig:
             "num_workers": 1,
             "num_envs_per_worker": 1,
             "num_gpus": 1,
-            "num_cpus_per_worker": 10,
             "framework": "tf",
             "horizon": 1000000, # horizon need to be set 
             "use_gae": True,

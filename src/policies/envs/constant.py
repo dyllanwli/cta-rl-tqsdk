@@ -21,17 +21,17 @@ class EnvConfig:
         self.max_steps: int = max_steps
 
         # other config params
-        self.init_balance: float = 200000
+        self.init_balance: float = 2000000
         self.max_volume: int = 30
         self.trade_position_ratio_limit: float = 0.9
 
         self.wandb_log: bool = True
 
         self.data_length: Dict[str, int] = {
-            "ticks": 10,
-            "bar_1m": 10,
-            "bar_5m": 10,
-            "bar_30m": 10,
-            "bar_60m": 10,
-            "bar_1d": 10,
+            "ticks": 2,
+            "bar_1m": 2,
+            "bar_5m": 2,
+            "bar_30m": 2,
+            "bar_60m": 2,
+            "bar_1d": 2,
         }

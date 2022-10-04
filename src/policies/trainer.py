@@ -1,3 +1,7 @@
+import logging
+logging.getLogger('tensorflow').disabled = True 
+
+
 from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
 from .envs.constant import EnvConfig
 from .envs import FuturesEnvV2 as FuturesEnv
@@ -8,14 +12,13 @@ from pprint import pprint
 import gym
 import ray
 
-import logging
-logging.getLogger('tensorflow').disabled = True
 
 class RLTrainer:
     def __init__(self, auth: TqAuth):
+        print("Initializing RL trainer")
 
-        backtest = TqBacktest(start_dt=date(2021, 1, 1),
-                              end_dt=date(2021, 3, 1))
+        backtest = TqBacktest(start_dt=date(2020, 1, 1),
+                              end_dt=date(2022, 3, 1))
 
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
@@ -29,7 +32,7 @@ class RLTrainer:
     def train(self, agent_name: str = "ppo"):
         trainer = Algos(name=agent_name, env=self.env,
                         env_config=self.env_config).trainer()
-        for i in range(10000):
+        for i in range(100000):
             print(f"Training iteration {i}")
             result = trainer.train()
             print(pprint(result))

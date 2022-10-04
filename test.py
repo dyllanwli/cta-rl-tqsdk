@@ -1,10 +1,12 @@
-import ray
-import logging
-from ray.rllib.algorithms.algorithm import Algorithm
-from ray.rllib.algorithms.ppo import PPO
-from ray.rllib.env.env_context import EnvContext
+import pandas as pd
+
+import numpy as np
 
 
+df = pd.DataFrame(np.random.randn(6, 4), columns=list('ABCD'))
 
+df['A'].loc[0] = np.nan
 
-ray.init(logging_level=logging.ERROR, log_to_driver=False)
+s = df.to_numpy()
+k = np.isnan(s).any() 
+print(k)
