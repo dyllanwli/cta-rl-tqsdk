@@ -25,6 +25,8 @@ class EnvConfig(EnvContext):
         self.max_volume: int = 30
         self.trade_position_ratio_limit: float = 0.9
 
+        self.wandb_log: bool = True
+
         self.data_length: Dict[str, int] = {
             "ticks": 30,
             "bar_1m": 30,

@@ -26,8 +26,10 @@ class FuturesEnvV1(gym.Env):
     def __init__(self, config):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
+        wandb.init(project="futures-trading", name="_" +
+                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
-        self._skip_env_checking = False
+        self._skip_env_checking = True
         self._set_config(config)
         self.seed(42)
 
@@ -66,16 +68,16 @@ class FuturesEnvV1(gym.Env):
         # RL config
         self.max_steps = config.max_steps
         self.action_space = spaces.Box(
-            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32)
+            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64)
         self.observation_space = spaces.Dict({
-            "static_balance": spaces.Box(low=0, high=np.inf, shape=(1,), dtype=np.float32),
-            "last_volume": spaces.Box(low=-config.max_volume, high=-config.max_volume, shape=(1,), dtype=np.int32),
-            "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int32),
-            "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int32),
-            "ticks": spaces.Box(low=0, high=np.inf, shape=(self.data_length['ticks'], 8), dtype=np.float32),
-            "bar_1m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float32),
-            "bar_60m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float32),
-            "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float32),
+            "static_balance": spaces.Box(low=0, high=np.inf, shape=(1,), dtype=np.float64),
+            "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
+            "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
+            "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
+            "ticks": spaces.Box(low=0, high=np.inf, shape=(self.data_length['ticks'], 8), dtype=np.float64),
+            "bar_1m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float64),
+            "bar_60m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float64),
+            "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
         })
 
     def _set_account(self, config: EnvConfig):
@@ -112,18 +114,18 @@ class FuturesEnvV1(gym.Env):
         now = time_to_datetime(self.instrument_quote.datetime)
         static_balance = self.account.static_balance
         ticks = self.ticks[['last_price', 'average', 'volume', 'open_interest', 'ask_price1', 'ask_volume1',
-                            'bid_price1', 'bid_volume1', ]].to_numpy(dtype=np.float32)
+                            'bid_price1', 'bid_volume1', ]].to_numpy(dtype=np.float64)
         bar_1m = self.bar_1m[['open', 'high',
-                              'low', 'close', 'volume']].to_numpy(dtype=np.float32)
+                              'low', 'close', 'volume']].to_numpy(dtype=np.float64)
         bar_60m = self.bar_60m[['open', 'high',
-                                'low', 'close', 'volume']].to_numpy(dtype=np.float32)
+                                'low', 'close', 'volume']].to_numpy(dtype=np.float64)
         bar_1d = self.bar_1d[['open', 'high',
-                              'low', 'close', 'volume']].to_numpy(dtype=np.float32)
+                              'low', 'close', 'volume']].to_numpy(dtype=np.float64)
         return dict({
-            "static_balance": np.array([static_balance], dtype=np.float32),
-            "last_volume": np.array([self.last_volume], dtype=np.int32),
-            "hour": np.array([now.hour], dtype=np.int32),
-            "minute": np.array([now.minute], dtype=np.int32),
+            "static_balance": np.array([static_balance], dtype=np.float64),
+            "last_volume": np.array([self.last_volume], dtype=np.int64),
+            "hour": np.array([now.hour], dtype=np.int64),
+            "minute": np.array([now.minute], dtype=np.int64),
             "ticks": ticks,
             "bar_1m": bar_1m,
             "bar_60m": bar_60m,

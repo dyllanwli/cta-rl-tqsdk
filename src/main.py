@@ -10,7 +10,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a2')
+    tqAPI = API(account='a3')
     # tqAPI.test()
     # cmod = Commodity()
     # symbol = cmod.get_instrument_name('egg')

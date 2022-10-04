@@ -60,15 +60,12 @@ class RLTrainer:
         env = gym.make(self.env, config=self.env_config)
         obs = env.reset()
 
-        wandb.init(project="futures-trading", name="run_" +
-                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         num_episodes = 0
         while num_episodes < max_episodes:
             action = trainer.compute_single_action(obs)
 
             obs, reward, done, info = env.step(action)
             info["reward"] = reward
-            wandb.log(info)
             if done:
                 num_episodes += 1
                 obs = env.reset()
