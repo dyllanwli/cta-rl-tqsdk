@@ -1,4 +1,4 @@
-from ray.rllib.algorithms.ppo import PPO
+from ray.rllib.algorithms import ppo
 import gym
 
 
@@ -20,5 +20,7 @@ class PPOConfig:
             "lr": 0.00001,
         }
 
-    def build(self) -> PPO:
-        return PPO(env=self.env, config=self.config)
+    def trainer(self) -> ppo.PPO:
+        config = ppo.DEFAULT_CONFIG.copy()
+        config.update(self.config)
+        return ppo.PPO(env=self.env, config=config)

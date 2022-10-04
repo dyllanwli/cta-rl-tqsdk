@@ -9,8 +9,8 @@ class Algos:
         else:
             raise ValueError("Not found")
 
-    def build(self):
-        return self.algo.build()
+    def trainer(self):
+        return self.algo.trainer()
 
     def config(self):
         return self.algo.config

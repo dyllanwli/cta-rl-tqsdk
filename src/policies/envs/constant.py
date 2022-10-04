@@ -1,18 +1,18 @@
 from typing import List, Dict
 from datetime import date
-from ray.rllib.env.env_context import EnvContext
-from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount
+from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount, TqApi
 
-class EnvConfig(EnvContext):
+
+class EnvConfig:
     # env config is a entity
-    def __init__(self, 
-        auth: TqAuth,
-        symbols: List[str],
-        backtest: TqBacktest = None,
-        live_market: bool = False,
-        live_account: TqAccount = None,
-        max_steps: int = 30000, # max actions per episode
-    ):
+    def __init__(self,
+                 auth: TqAuth,
+                 symbols: List[str],
+                 backtest: TqBacktest = None,
+                 live_market: bool = False,
+                 live_account: TqAccount = None,
+                 max_steps: int = 30000,  # max actions per episode
+                 ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
         self.backtest: TqBacktest = backtest
@@ -28,16 +28,10 @@ class EnvConfig(EnvContext):
         self.wandb_log: bool = True
 
         self.data_length: Dict[str, int] = {
-            "ticks": 30,
-            "bar_1m": 30,
-            "bar_5m": 30,
-            "bar_30m": 30,
-            "bar_60m": 30,
-            "bar_1d": 30,
+            "ticks": 10,
+            "bar_1m": 10,
+            "bar_5m": 10,
+            "bar_30m": 10,
+            "bar_60m": 10,
+            "bar_1d": 10,
         }
-
-
-
-
-
-

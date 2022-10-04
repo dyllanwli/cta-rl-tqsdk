@@ -1,17 +1,15 @@
+from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
+from .envs.constant import EnvConfig
+from .envs import FuturesEnvV2 as FuturesEnv
+from .algos import Algos
 from datetime import date, datetime
 from pprint import pprint
-import logging
 
-import wandb
 import gym
 import ray
 
-from .algos import Algos
-from .envs.futures_env_v1 import FuturesEnvV1
-from .envs.constant import EnvConfig
-
-from tqsdk import TqApi, TqAuth, TqBacktest
-
+import logging
+logging.getLogger('tensorflow').disabled = True
 
 class RLTrainer:
     def __init__(self, auth: TqAuth):
@@ -23,18 +21,14 @@ class RLTrainer:
             auth=auth,
             symbols=["cotton"],
             backtest=backtest,
-            live_market=False,
         )}
-        self.env = FuturesEnvV1
+        self.env = FuturesEnv
 
-        ray.init(logging_level=logging.ERROR, log_to_driver=False, num_cpus=10, local_mode=True)
-
-    def env_creator(self, config):
-        return FuturesEnvV1(config)
+        ray.init(logging_level=logging.INFO, num_cpus=10, num_gpus=1)
 
     def train(self, agent_name: str = "ppo"):
         trainer = Algos(name=agent_name, env=self.env,
-                        env_config=self.env_config).build()
+                        env_config=self.env_config).trainer()
         for i in range(10000):
             print(f"Training iteration {i}")
             result = trainer.train()
@@ -46,7 +40,7 @@ class RLTrainer:
 
     def run(self, checkpoint_path, agent_name: str = "ppo", max_episodes: int = 1000):
         trainer = Algos(name=agent_name, env=self.env,
-                        env_config=self.env_config).build()
+                        env_config=self.env_config).trainer()
         trainer.restore(checkpoint_path)
         print("Restored from checkpoint path", checkpoint_path)
 

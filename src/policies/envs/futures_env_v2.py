@@ -44,26 +44,31 @@ class FuturesEnvV2(gym.Env):
                 self.target_pos_task.set_target_volume(0)
             self.target_pos_task = TargetPosTask(
                 self.api, self.underlying_symbol, offset_priority="昨今开")
+
             self.ticks = self.api.get_tick_serial(
                 self.underlying_symbol, data_length=self.data_length['ticks'])
             self.bar_1m = self.api.get_kline_serial(
                 self.underlying_symbol, 60, data_length=self.data_length['bar_1m'])
             self.bar_60m = self.api.get_kline_serial(
                 self.underlying_symbol, 3600, data_length=self.data_length['bar_60m'])
-            self.bar_1d = self.api.get_kline_serial(
-                self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
+            # self.bar_1d = self.api.get_kline_serial(
+            #     self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
         print("Setting config")
-        self._set_account(config)
+        self.api = self._set_account(config.auth, config.backtest, config.init_balance)
+        self.account = self.api.get_account()
+
+        # Set target position task to None to call _update_subscription at the first time
+        self.target_pos_task = None 
         symbol = get_symbols_by_names(config)[0]
         self.instrument_quote = self.api.get_quote(symbol)
 
         # Account and API
         self.data_length = config.data_length
         self.underlying_symbol = self.instrument_quote.underlying_symbol
-        self.balance = config.init_balance
+        self.balance = self.account.static_balance
 
         # RL config
         self.max_steps = config.max_steps
@@ -77,31 +82,30 @@ class FuturesEnvV2(gym.Env):
             "ticks": spaces.Box(low=0, high=np.inf, shape=(self.data_length['ticks'], 8), dtype=np.float64),
             "bar_1m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float64),
             "bar_60m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float64),
-            "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
+            # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
         })
 
-    def _set_account(self, config: EnvConfig):
+    def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
         """
         Set account and API for TqApi
         """
-        if config.backtest is not None:
+        api = None
+        if backtest is not None:
             # backtest
             print("Backtest mode")
-            self.api: TqApi = TqApi(auth=config.auth, backtest=config.backtest,
-                                    account=TqSim(init_balance=config.init_balance))
+            api: TqApi = TqApi(auth=auth,
+                               account=TqSim(init_balance=init_balance))
         else:
             # live or sim
-            if config.live_market:
+            if live_market:
                 print("Live market mode")
-                self.api = TqApi(account=config.live_account, auth=config.auth)
+                api = TqApi(
+                    account=live_account, auth=auth)
             else:
                 print("Sim mode")
-                self.api = TqApi(auth=config.auth, account=TqSim(
-                    init_balance=config.init_balance))
-        self.account = self.api.get_account()
-
-        # Set target position task
-        self.target_pos_task = None
+                api = TqApi(auth=auth, account=TqSim(
+                    init_balance=init_balance))
+        return api
 
     def _reward_function(self):
         # Reward is the change of balance
@@ -119,8 +123,7 @@ class FuturesEnvV2(gym.Env):
                               'low', 'close', 'volume']].to_numpy(dtype=np.float64)
         bar_60m = self.bar_60m[['open', 'high',
                                 'low', 'close', 'volume']].to_numpy(dtype=np.float64)
-        bar_1d = self.bar_1d[['open', 'high',
-                              'low', 'close', 'volume']].to_numpy(dtype=np.float64)
+        # bar_1d = self.bar_1d[['open', 'high','low', 'close', 'volume']].to_numpy(dtype=np.float64)
         return dict({
             "static_balance": np.array([static_balance], dtype=np.float64),
             "last_volume": np.array([self.last_volume], dtype=np.int64),
@@ -129,7 +132,7 @@ class FuturesEnvV2(gym.Env):
             "ticks": ticks,
             "bar_1m": bar_1m,
             "bar_60m": bar_60m,
-            "bar_1d": bar_1d
+            # "bar_1d": bar_1d
         })
 
     def step(self, action: int):
@@ -163,6 +166,7 @@ class FuturesEnvV2(gym.Env):
         self.steps = 0
         self.last_volume = 0  # last target position volume
         self.reward = 0
+        self.api.wait_update()
         self._update_subscription()
         state = self._get_state()
         now = time_to_datetime(self.instrument_quote.datetime)
