@@ -17,7 +17,7 @@ class RLTrainer:
     def __init__(self, auth: TqAuth):
         print("Initializing RL trainer")
 
-        backtest = TqBacktest(start_dt=date(2020, 1, 1),
+        backtest = TqBacktest(start_dt=date(2016, 1, 1),
                               end_dt=date(2022, 3, 1))
 
         self.env_config = {"cfg": EnvConfig(

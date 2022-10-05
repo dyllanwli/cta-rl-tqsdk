@@ -29,6 +29,7 @@ class EnvConfig:
 
         self.data_length: Dict[str, int] = {
             "ticks": 2,
+            "bar_1s": 2,
             "bar_1m": 2,
             "bar_5m": 2,
             "bar_30m": 2,

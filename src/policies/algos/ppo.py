@@ -16,6 +16,7 @@ class PPOConfig:
             "framework": "tf",
             "horizon": 1000000, # horizon need to be set 
             "use_gae": True,
+            "lambda": 0.55,
             "lr": 0.00001,
         }
 
