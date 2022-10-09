@@ -29,6 +29,8 @@ def get_trading_time(quote):
 
 
 class Interval(Enum):
+    ONE_SEC = "1s"
+    FIVE_SEC = "5s"
     ONE_MIN = "1m"
     FIVE_MIN = "5m"
     FIFTEEN_MIN = "15m"

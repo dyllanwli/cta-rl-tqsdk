@@ -69,6 +69,24 @@ class MongoDAO:
         )
         return collection
 
+    def load_bar_data(self, instrument_id: str, start: datetime, end: datetime, interval: Interval) -> pd.DataFrame:
+        collection = self.db['bar_' + interval.value]
+        cursor = collection.find(
+            {
+                "instrument_id": instrument_id,
+                "datetime": {
+                    "$gte": start,
+                    "$lte": end,
+                },
+            },
+            {
+                "_id": 0,
+            },
+        ).sort('datetime', 1)
+        df = pd.DataFrame(list(cursor))
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        return df
+
     def save_bar_data(self, symbol: str, instrument_id: str, bars: List[pd.Series], interval: Interval) -> None:
         """
         kline: pd.Series
@@ -156,7 +174,8 @@ class MongoDAO:
     def download_data(self, auth: TqAuth, instrument_list: list, start_dt: date = None, end_dt: date = None) -> None:
         """
         e.g. 
-        download_data(auth, ['cotton', 'methanol', 'rebar', 'soybean', 'sliver', 'copper', 'iron_orb'], date(2016, 1, 1), date(2016, 2, 1))
+        dao = MongoDAO()
+        dao.download_data(tqAPI.auth, ['cotton', 'methanol', 'rebar', 'soybean', 'sliver', 'copper', 'iron_orb'], date(2016, 1, 1), date(2016, 2, 1))
         """
         print('start download data')
         cmod = Commodity()

@@ -8,7 +8,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 from .constant import EnvConfig
-from .tools import get_symbols_by_names
+from .tools import DataLoader
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account
@@ -21,6 +21,7 @@ class FuturesEnvV3(gym.Env):
     TqApi is required.
     Single symbol and interday only. 
     """
+
     def __init__(self, config):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
@@ -36,19 +37,15 @@ class FuturesEnvV3(gym.Env):
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
         print("Setting config")
-        self.api = self._set_account(
-            config.auth, config.backtest, config.init_balance)
+        self.api = DataLoader(config)
         self.account = self.api.get_account()
+        self.intervals = config.intervals
 
-        # Set target position task to None to call _update_subscription at the first time
         self.target_pos_task = None
-        symbol = get_symbols_by_names(config)[0]
-        self.instrument_quote = self.api.get_quote(symbol)
-        self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
 
         # Account and API
         self.data_length = config.data_length
-        self.underlying_symbol = self.instrument_quote.underlying_symbol
+
         self.balance = deepcopy(self.account.balance)
 
         # RL config
@@ -56,57 +53,12 @@ class FuturesEnvV3(gym.Env):
         self.action_space: spaces.Box = spaces.Box(
             low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64)
         self.observation_space: spaces.Dict = spaces.Dict({
-            "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
             "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
             "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
-            "bar_1s": spaces.Box(low=-1, high=np.inf, shape=(self.data_length['bar_1s'], 5), dtype=np.float64),
-            "bar_1m": spaces.Box(low=-1, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float64),
-            "bar_30m": spaces.Box(low=-1, high=np.inf, shape=(self.data_length['bar_30m'], 5), dtype=np.float64),
-            # "bar_60m": spaces.Box(low=-1, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float64),
-            # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
+            "bar_1s": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1s'], 5), dtype=np.float64),
+            "bar_1m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1m'], 5), dtype=np.float64),
+            "bar_30m": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_30m'], 5), dtype=np.float64),
         })
-
-    def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
-        """
-        Set account and API for TqApi
-        """
-        api = None
-        if backtest is not None:
-            # backtest
-            print("Backtest mode")
-            api: TqApi = TqApi(auth=auth, backtest=backtest,
-                               account=TqSim(init_balance=init_balance))
-        else:
-            # live or sim
-            if live_market:
-                print("Live market mode")
-                api = TqApi(
-                    account=live_account, auth=auth)
-            else:
-                print("Sim mode")
-                api = TqApi(auth=auth, account=TqSim(
-                    init_balance=init_balance))
-        return api
-
-    def _update_subscription(self):
-        # update quote subscriptions when underlying_symbol changes
-        if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
-            print("Updating subscription")
-            self.underlying_symbol = self.instrument_quote.underlying_symbol
-            if self.target_pos_task is not None:
-                self.target_pos_task.set_target_volume(0)
-            self.target_pos_task = TargetPosTask(
-                self.api, self.underlying_symbol, offset_priority="昨今开")
-
-            self.bar_1s = self.api.get_kline_serial(
-                self.underlying_symbol, 1, data_length=self.data_length['bar_1s'])
-            self.bar_1m = self.api.get_kline_serial(
-                self.underlying_symbol, 60, data_length=self.data_length['bar_1m'])
-            self.bar_30m = self.api.get_kline_serial(
-                self.underlying_symbol, 1800, data_length=self.data_length['bar_30m'])
-
-            # self.bar_1d = self.api.get_kline_serial(
-            #     self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
 
     def _reward_function(self):
         # Reward is the change of balance
@@ -128,7 +80,6 @@ class FuturesEnvV3(gym.Env):
                 bar_30m = self.bar_30m[self.OHLCV].to_numpy(dtype=np.float64)
 
                 state = dict({
-                    "last_volume": np.array([self.last_volume], dtype=np.int64),
                     "hour": np.array([now.hour], dtype=np.int64),
                     "minute": np.array([now.minute], dtype=np.int64),
                     "bar_1s": bar_1s,
@@ -146,14 +97,11 @@ class FuturesEnvV3(gym.Env):
         try:
             assert self.action_space.contains(action)
             action = action[0]
-            self.target_pos_task.set_target_volume(action)
             self.api.wait_update()
             self.reward = self._reward_function()
             state = self._get_state()
             self.last_volume = deepcopy(action)
             self.steps += 1
-
-            self._update_subscription()
             self.log_info()
             wandb.log(self.info)
             if self.steps >= self.max_steps:
@@ -161,7 +109,6 @@ class FuturesEnvV3(gym.Env):
             return state, self.reward, self.done, self.info
         except Exception as e:
             print("Error in step, resetting position to 0")
-            self.target_pos_task.set_target_volume(0)
             self.api.wait_update()
             raise e
 
@@ -177,7 +124,6 @@ class FuturesEnvV3(gym.Env):
         self.reward = 0
         self.accumulated_reward = 0
         self.api.wait_update()
-        self._update_subscription()
         state = self._get_state()
         self.log_info()
         # np.save("state.npy", state) # debug
@@ -200,7 +146,6 @@ class FuturesEnvV3(gym.Env):
             # "premium": self.account.premium,
             "risk_ratio": self.account.risk_ratio,
             # "market_value": self.account.market_value,
-            "time": self.instrument_quote.datetime,
             "reward": self.reward,
             "commision_change": self.account.commission - self.last_commision,
             "last_volume": self.last_volume,

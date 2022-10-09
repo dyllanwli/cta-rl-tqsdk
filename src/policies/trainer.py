@@ -1,29 +1,27 @@
 import logging
-logging.getLogger('tensorflow').disabled = True 
+logging.getLogger('tensorflow').disabled = True
 
-
-from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
-from .envs.constant import EnvConfig
-from .envs import FuturesEnvV2 as FuturesEnv
-from .algos import Algos
-from datetime import date, datetime
-from pprint import pprint
-
-import gym
 import ray
+import gym
+from pprint import pprint
+from datetime import date, datetime
+from .algos import Algos
+from .envs import FuturesEnvV2_2 as FuturesEnv
+from .envs.constant import EnvConfig
+from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
+
 
 
 class RLTrainer:
     def __init__(self, auth: TqAuth):
         print("Initializing RL trainer")
 
-        backtest = TqBacktest(start_dt=date(2016, 1, 1),
-                              end_dt=date(2022, 3, 1))
-
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
             symbols=["cotton"],
-            backtest=backtest,
+            start_dt=date(2016, 1, 1),
+            end_dt=date(2022, 3, 1),
+            dataloader="db",
         )}
         self.env = FuturesEnv
 
