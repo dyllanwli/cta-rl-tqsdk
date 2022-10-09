@@ -1,10 +1,10 @@
 from datetime import datetime
 from collections import defaultdict, deque
-
+import wandb
 import numpy as np
 from copy import deepcopy
-from traitlets import default
-import wandb
+import logging
+
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -14,9 +14,10 @@ from .tools import get_symbols_by_names
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
-from tqsdk.tafunc import time_to_datetime
+from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
 from utils import Interval
+
 
 
 class TargetPosTaskOffline:
@@ -25,7 +26,10 @@ class TargetPosTaskOffline:
         self.positions = deque([])
         self.commission = commission
         self.margin_rate = 2.0
-        self.verbose = verbose
+        if verbose == 0:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
     
     def insert_order(self,):
         # TODO insert order
@@ -34,42 +38,49 @@ class TargetPosTaskOffline:
     def set_target_volume(self, volume, price: float):
         profit = 0
         if self.last_volume == volume:
-            return
+            logging.debug("hold position")
+            return 0
         if volume * self.last_volume > 0:
-            position_change = volume - self.last_volume
-            sign = 1 if volume > 0 else -1
-            if position_change > 0:
-                if self.verbose > 0:
-                    print("buy", position_change)
-                for _ in range(position_change):
-                    self.insert_order()
-                    self.positions.append(price)
+            if volume > 0:
+                position_change = volume - self.last_volume
+                if position_change > 0:
+                    logging.debug("bug long %d", position_change)
+                    for _ in range(position_change):
+                        self.insert_order() 
+                        self.positions.append(price)
+                else:
+                    logging.debug("sell long %d", position_change)
+                    for _ in range(-position_change):
+                        self.insert_order()
+                        profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
             else:
-                if self.verbose > 0:
-                    print("sell", position_change)
-                for _ in range(-position_change):
-                    self.insert_order()
-                    profit += sign * (price - self.positions.popleft()) * self.margin_rate - self.commission
+                position_change = self.last_volume - volume
+                if position_change > 0:
+                    logging.debug("buy short %d", position_change)
+                    for _ in range(position_change):
+                        self.insert_order()
+                        self.positions.append(price)
+                else:
+                    logging.debug("sell short %d", position_change)
+                    for _ in range(-position_change):
+                        self.insert_order()
+                        profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
         else:
             if volume >= 0:
-                if self.verbose > 0:
-                    print("sell short", self.last_volume)
-                for _ in range(-self.last_volume):
+                logging.debug("sell short %d", self.last_volume)
+                while len(self.positions) > 0:
                     self.insert_order()
                     profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
-                if self.verbose > 0:
-                    print("buy long", volume)
+                logging.debug("buy long %d", volume)
                 for _ in range(volume):
                     self.insert_order()
                     self.positions.append(price)
             else:
-                if self.verbose > 0:
-                    print("sell long", self.last_volume)
-                for _ in range(self.last_volume):
+                logging.debug("sell long %d", self.last_volume)
+                while len(self.positions) > 0:
                     self.insert_order()
                     profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
-                if self.verbose > 0:
-                    print("buy short", volume)
+                logging.debug("buy short %d", volume)
                 for _ in range(-volume):
                     self.insert_order()
                     self.positions.append(price)
@@ -90,8 +101,8 @@ class FuturesEnvV2_2(gym.Env):
     def __init__(self, config):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
-        wandb.init(project="futures-trading", name="_" +
-                   datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        
+        # wandb.init(project="futures-trading", name = config.wandb_name)
 
         self._skip_env_checking = True
         self._set_config(config)
@@ -125,9 +136,9 @@ class FuturesEnvV2_2(gym.Env):
             "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
             "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
             "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
-            Interval.ONE_SEC: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.ONE_SEC], 5), dtype=np.float64),
-            Interval.ONE_MIN: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.ONE_MIN], 5), dtype=np.float64),
-            Interval.THIRTY_MIN: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.THIRTY_MIN], 5), dtype=np.float64),
+            Interval.ONE_SEC.value: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.ONE_SEC.value], 5), dtype=np.float64),
+            Interval.ONE_MIN.value: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.ONE_MIN.value], 5), dtype=np.float64),
+            Interval.THIRTY_MIN.value: spaces.Box(low=-1, high=np.inf, shape=(self.data_length[Interval.THIRTY_MIN.value], 5), dtype=np.float64),
             # "bar_60m": spaces.Box(low=-1, high=np.inf, shape=(self.data_length['bar_60m'], 5), dtype=np.float64),
             # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
         })
@@ -165,17 +176,18 @@ class FuturesEnvV2_2(gym.Env):
             self.target_pos_task = TargetPosTaskOffline()
 
             self.bar_1s = self.api.get_kline_serial(
-                self.underlying_symbol, 1, data_length=self.data_length[Interval.ONE_SEC])
+                self.underlying_symbol, 1, data_length=self.data_length[Interval.ONE_SEC.value])
             self.bar_1m = self.api.get_kline_serial(
-                self.underlying_symbol, 60, data_length=self.data_length[Interval.ONE_MIN])
+                self.underlying_symbol, 60, data_length=self.data_length[Interval.ONE_MIN.value])
             self.bar_30m = self.api.get_kline_serial(
-                self.underlying_symbol, 1800, data_length=self.data_length[Interval.THIRTY_MIN])
+                self.underlying_symbol, 1800, data_length=self.data_length[Interval.THIRTY_MIN.value])
 
             # self.bar_1d = self.api.get_kline_serial(
             #     self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
 
     def _reward_function(self):
         # Reward is the profit of the last action
+        self.accumulated_reward += self.profit
         return self.profit
 
     def _get_state(self):
@@ -192,13 +204,12 @@ class FuturesEnvV2_2(gym.Env):
                     "last_volume": np.array([self.last_volume], dtype=np.int64),
                     "hour": np.array([now.hour], dtype=np.int64),
                     "minute": np.array([now.minute], dtype=np.int64),
-                    "bar_1s": bar_1s,
-                    "bar_1m": bar_1m,
-                    "bar_30m": bar_30m,
+                    Interval.ONE_SEC.value: bar_1s,
+                    Interval.ONE_MIN.value: bar_1m,
+                    Interval.THIRTY_MIN.value: bar_30m,
                     # "bar_1d": bar_1d
                 })
                 if np.isnan(bar_1s).any() or np.isnan(bar_1m).any() or np.isnan(bar_30m).any():
-                    print("Nan in state, waiting for new data")
                     self.api.wait_update()
                 else:
                     return state
@@ -216,7 +227,7 @@ class FuturesEnvV2_2(gym.Env):
 
             self._update_subscription()
             self.log_info()
-            wandb.log(self.info)
+            # wandb.log(self.info)
             if self.steps >= self.max_steps:
                 self.done = True
             return state, self.reward, self.done, self.info
@@ -242,7 +253,6 @@ class FuturesEnvV2_2(gym.Env):
         self._update_subscription()
         state = self._get_state()
         self.log_info()
-        # np.save("state.npy", state) # debug
         return state
 
     def log_info(self,):
@@ -262,12 +272,13 @@ class FuturesEnvV2_2(gym.Env):
             # "premium": self.account.premium,
             # "risk_ratio": self.account.risk_ratio,
             # "market_value": self.account.market_value,
-            "time": self.instrument_quote.datetime,
-            "reward": self.reward,
+            "training_info/time": time_to_s_timestamp(self.instrument_quote.datetime),
+            "training_info/reward": self.reward,
             # "commision_change": self.account.commission - self.last_commision,
-            "last_volume": self.last_volume,
-            "accumulated_reward": self.accumulated_reward,
-            "profit": self.profit,
+            "training_info/last_volume": self.last_volume,
+            "training_info/accumulated_reward": self.accumulated_reward,
+            "training_info/profit": self.profit,
+            "training_info/last_price": self.instrument_quote.last_price,
         }
         # self.last_commision = self.account.commission
 

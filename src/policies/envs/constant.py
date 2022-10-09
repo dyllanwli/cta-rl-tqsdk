@@ -15,9 +15,11 @@ class EnvConfig:
                  end_dt: date = None,
                  live_market: bool = False,
                  live_account: TqAccount = None,
-                 max_steps: int = 30000,  # max actions per episode
+                 wandb_name: str = None,
+                 max_steps: int = 86400,  # max actions per episode
                  dataloader: str = "db",
-                 intervals: List[Interval] = [Interval.ONE_MIN, Interval.THIRTY_MIN],
+                 intervals: List[Interval] = [
+                     Interval.ONE_MIN, Interval.THIRTY_MIN],
                  ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
@@ -25,6 +27,8 @@ class EnvConfig:
         self.end_dt: date = end_dt
         self.live_market: bool = live_market
         self.live_account: TqAccount = live_account
+        self.wandb_name = wandb_name
+
         self.max_steps: int = max_steps
 
         self.dataloader: str = dataloader  # db or api
@@ -32,21 +36,19 @@ class EnvConfig:
 
         # other config params
         self.init_balance: float = 2000000
-        self.max_volume: int = 30
+        self.max_volume: int = 10
         self.trade_position_ratio_limit: float = 0.9
 
-        self.wandb_log: bool = True
-
         self.data_length: Dict[str, int] = {
-            Interval.ONE_SEC: 10,
-            Interval.FIVE_SEC: 10,
-            Interval.ONE_MIN: 10,
-            Interval.FIVE_MIN: 10,
-            Interval.FIFTEEN_MIN: 10,
-            Interval.THIRTY_MIN: 10,
-            Interval.ONE_HOUR: 10,
-            Interval.FOUR_HOUR: 10,
-            Interval.ONE_DAY: 10,
+            Interval.ONE_SEC.value: 10,
+            Interval.FIVE_SEC.value: 10,
+            Interval.ONE_MIN.value: 10,
+            Interval.FIVE_MIN.value: 10,
+            Interval.FIFTEEN_MIN.value: 10,
+            Interval.THIRTY_MIN.value: 10,
+            Interval.ONE_HOUR.value: 10,
+            Interval.FOUR_HOUR.value: 10,
+            Interval.ONE_DAY.value: 10,
         }
 
     @property
