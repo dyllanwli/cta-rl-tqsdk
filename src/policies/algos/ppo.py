@@ -14,8 +14,9 @@ class PPOConfig:
             "env_config": env_config,
             "num_workers": 1,
             "num_envs_per_worker": 1,
+            "num_cpus_per_worker": 10,
             "num_gpus": 1,
-            "framework": "tf2",
+            "framework": "torch",
             "horizon": 1000000,  # horizon need to be set
             "use_gae": True,
             "clip_param": 0.3,
@@ -41,7 +42,7 @@ class PPOConfig:
                 "attention_position_wise_mlp_dim": 64,
             },
         }
-
+    
     def trainer(self) -> ppo.PPO:
         config = ppo.DEFAULT_CONFIG.copy()
         config.update(self.config)

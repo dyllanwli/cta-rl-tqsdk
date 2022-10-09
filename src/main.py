@@ -9,7 +9,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a1')
+    tqAPI = API(account='a3')
     # tqAPI.test()
     # init wandb by symbol and datetime
     # wandb.init(project="tqrl-dev",
