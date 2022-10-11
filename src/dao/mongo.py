@@ -141,25 +141,36 @@ class MongoDAO:
             ))
         result = collection.bulk_write(requests)
 
-    def update_bar_data_subscribe(self, instrument: str, instrument_quotes: Dict[str, Quote]) -> None:
+    def update_bar_data_subscribe(self, instrument: str, instrument_quotes: Dict[str, Quote], intervals = None) -> None:
         underlying_symbol = instrument_quotes[instrument].underlying_symbol
         print("updating", underlying_symbol)
 
         # subscribe data
-        self.tick_data[instrument] = self.api.get_tick_serial(
-            underlying_symbol, data_length=2)
-        self.bar_data_1m[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 60, data_length=2)
-        self.bar_data_5m[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 300, data_length=2)
-        self.bar_data_15m[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 900, data_length=2)
-        self.bar_data_30m[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 1800, data_length=2)
-        self.bar_data_1h[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 3600, data_length=2)
-        self.bar_data_1d[instrument] = self.api.get_kline_serial(
-            underlying_symbol, 86400, data_length=2)
+        if intervals is None or "tick" in intervals:
+            self.tick_data[instrument] = self.api.get_tick_serial(
+                underlying_symbol, data_length=2)
+
+        if intervals is None or "1s" in intervals:
+            self.bar_data_1s[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 1, data_length=2)
+        if intervals is None or "1m" in intervals:
+            self.bar_data_1m[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 60, data_length=2)
+        if intervals is None or "5m" in intervals:
+            self.bar_data_5m[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 300, data_length=2)
+        if intervals is None or "15m" in intervals:
+            self.bar_data_15m[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 900, data_length=2)
+        if intervals is None or "30m" in intervals:
+            self.bar_data_30m[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 1800, data_length=2)
+        if intervals is None or "1h" in intervals:
+            self.bar_data_1h[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 3600, data_length=2)
+        if intervals is None or "1d" in intervals:
+            self.bar_data_1d[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 86400, data_length=2)
 
     def setup(self, auth: TqAuth, start_dt: date = None, end_dt: date = None) -> None:
         if start_dt and end_dt:
@@ -171,7 +182,7 @@ class MongoDAO:
         else:
             self.api = TqApi(auth=auth)
 
-    def download_data(self, auth: TqAuth, instrument_list: list, start_dt: date = None, end_dt: date = None) -> None:
+    def download_data(self, auth: TqAuth, instrument_list: list, start_dt: date = None, end_dt: date = None, intervals = None) -> None:
         """
         e.g. 
         dao = MongoDAO()
@@ -185,6 +196,7 @@ class MongoDAO:
         # Initialize data object
         instrument_quotes: Dict[str, Quote] = dict()
         self.tick_data: Dict[str, pd.DataFrame] = dict()
+        self.bar_data_1s: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_5m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_15m: Dict[str, pd.DataFrame] = dict()
@@ -196,6 +208,7 @@ class MongoDAO:
         self.setup(auth, start_dt, end_dt)
 
         self.ticks_data = defaultdict(list)
+        self.bars_data_1s = defaultdict(list)
         self.bars_data_1m = defaultdict(list)
         self.bars_data_5m = defaultdict(list)
         self.bars_data_15m = defaultdict(list)
@@ -206,7 +219,7 @@ class MongoDAO:
         with closing(self.api):
             for instrument in instrument_list:
                 instrument_quotes[instrument] = self.api.get_quote(instrument)
-                self.update_bar_data_subscribe(instrument, instrument_quotes)
+                self.update_bar_data_subscribe(instrument, instrument_quotes, intervals)
 
             print("start loop")
             while True:
@@ -218,56 +231,69 @@ class MongoDAO:
                     if self.api.is_changing(iqt, "underlying_symbol"):
                         self.update_bar_data_subscribe(
                             instrument, instrument_quotes)
+                    if intervals is None or "tick" in intervals:
+                        if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
+                            self.ticks_data[instrument].append(
+                                self.tick_data[instrument].iloc[-2])
+                    if intervals is None or "1s" in intervals:
+                        if self.api.is_changing(self.bar_data_1s[instrument].iloc[-1], "datetime"):
+                            self.bars_data_1s[instrument].append(
+                                self.bar_data_1s[instrument].iloc[-2])
+                    if intervals is None or "1m" in intervals:
+                        if self.api.is_changing(self.bar_data_1m[instrument].iloc[-1], "datetime"):
+                            self.bars_data_1m[instrument].append(
+                                self.bar_data_1m[instrument].iloc[-2])
+                    if intervals is None or "5m" in intervals:
+                        if self.api.is_changing(self.bar_data_5m[instrument].iloc[-1], "datetime"):
+                            self.bars_data_5m[instrument].append(
+                                self.bar_data_1m[instrument].iloc[-2])
+                    if intervals is None or "15m" in intervals:
+                        if self.api.is_changing(self.bar_data_15m[instrument].iloc[-1], "datetime"):
+                            self.bars_data_15m[instrument].append(
+                                self.bar_data_15m[instrument].iloc[-2])
+                    if intervals is None or "30m" in intervals:
+                        if self.api.is_changing(self.bar_data_30m[instrument].iloc[-1], "datetime"):
+                            self.bars_data_30m[instrument].append(
+                                self.bar_data_30m[instrument].iloc[-2])
+                    if intervals is None or "1h" in intervals:
+                        if self.api.is_changing(self.bar_data_1h[instrument].iloc[-1], "datetime"):
+                            self.bars_data_1h[instrument].append(
+                                self.bar_data_1h[instrument].iloc[-2])
 
-                    if self.api.is_changing(self.tick_data[instrument].iloc[-1], "datetime"):
-                        self.ticks_data[instrument].append(
-                            self.tick_data[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_1m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1m[instrument].append(
-                            self.bar_data_1m[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_5m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_5m[instrument].append(
-                            self.bar_data_1m[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_15m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_15m[instrument].append(
-                            self.bar_data_15m[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_30m[instrument].iloc[-1], "datetime"):
-                        self.bars_data_30m[instrument].append(
-                            self.bar_data_30m[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_1h[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1h[instrument].append(
-                            self.bar_data_1h[instrument].iloc[-2])
-
-                    if self.api.is_changing(self.bar_data_1d[instrument].iloc[-1], "datetime"):
-                        self.bars_data_1d[instrument].append(
-                            self.bar_data_1d[instrument].iloc[-2])
-
+                    if intervals is None or "1d" in intervals:
+                        if self.api.is_changing(self.bar_data_1d[instrument].iloc[-1], "datetime"):
+                            self.bars_data_1d[instrument].append(
+                                self.bar_data_1d[instrument].iloc[-2])
                         # save data by day to database
-                        self.save_tick_data(underlying_symbol, instrument,
-                                            self.ticks_data[instrument])
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_1m[instrument], Interval.ONE_MIN)
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_5m[instrument], Interval.FIVE_MIN)
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_30m[instrument], Interval.THIRTY_MIN)
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_1h[instrument], Interval.ONE_HOUR)
-                        self.save_bar_data(underlying_symbol, instrument,
-                                           self.bars_data_1d[instrument], Interval.ONE_DAY)
-
-                        # Reset defaultdict
-                        self.ticks_data[instrument] = []
-                        self.bars_data_1m[instrument] = []
-                        self.bars_data_5m[instrument] = []
-                        self.bars_data_15m[instrument] = []
-                        self.bars_data_30m[instrument] = []
-                        self.bars_data_1h[instrument] = []
-                        self.bars_data_1d[instrument] = []
+                        if intervals is None or "tick" in intervals:
+                            self.save_tick_data(underlying_symbol, instrument,
+                                                self.ticks_data[instrument])
+                            self.ticks_data[instrument] = []
+                        if intervals is None or "1s" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_1s[instrument], Interval.ONE_MIN)
+                            self.bars_data_1s[instrument] = []
+                        if intervals is None or "1m" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_1m[instrument], Interval.ONE_MIN)
+                            self.bars_data_1m[instrument] = []
+                        if intervals is None or "5m" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_5m[instrument], Interval.FIVE_MIN)
+                            self.bars_data_5m[instrument] = []
+                        if intervals is None or "15m" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
+                            self.bars_data_15m[instrument] = []
+                        if intervals is None or "30m" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_30m[instrument], Interval.THIRTY_MIN)
+                            self.bars_data_30m[instrument] = []
+                        if intervals is None or "1h" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_1h[instrument], Interval.ONE_HOUR)
+                            self.bars_data_1h[instrument] = []
+                        if intervals is None or "1d" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_1d[instrument], Interval.ONE_DAY)
+                            self.bars_data_1d[instrument] = []
