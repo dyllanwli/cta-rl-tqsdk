@@ -1,5 +1,6 @@
 from .ppo import PPOConfig
 from .a3c import A3CConfig
+from .a2c import A2CConfig
 import gym
 
 from ray.rllib.algorithms.algorithm import Algorithm
@@ -11,6 +12,8 @@ class Algos:
             self.algo = PPOConfig(env=env, env_config=env_config)
         elif name == "A3C":
             self.algo = A3CConfig(env=env, env_config=env_config)
+        elif name == "A2C":
+            self.algo = A2CConfig(env=env, env_config=env_config)
         else:
             raise ValueError("Not found")
 

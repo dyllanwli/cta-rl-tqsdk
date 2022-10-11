@@ -36,7 +36,7 @@ class RLTrainer:
 
         ray.init(logging_level=logging.INFO, num_cpus=40, num_gpus=1)
 
-    def train(self, algo_name: str = "A3C"):
+    def train(self, algo_name: str = "A2C"):
         algos = Algos(name=algo_name, env=self.env,
                       env_config=self.env_config)
         if self.train_type == "tune":
@@ -69,7 +69,7 @@ class RLTrainer:
             for i in range(1000000):
                 result = trainer.train()
                 self.logging(result)
-                if i % 100 == 0:
+                if i % 500 == 0:
                     checkpoint = trainer.save(checkpoint_dir="checkpoints")
                     print("checkpoint saved at", checkpoint)
         ray.shutdown()
