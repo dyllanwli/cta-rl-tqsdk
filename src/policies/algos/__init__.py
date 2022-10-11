@@ -2,7 +2,7 @@ from .ppo import PPOConfig
 from .a3c import A3CConfig
 import gym
 
-from ray.tune.trainable import Trainable
+from ray.rllib.algorithms.algorithm import Algorithm
 
 
 class Algos:
@@ -15,7 +15,7 @@ class Algos:
             raise ValueError("Not found")
 
     @property
-    def trainer(self) -> Trainable:
+    def trainer(self) -> Algorithm:
         return self.algo.trainer()
 
     @property

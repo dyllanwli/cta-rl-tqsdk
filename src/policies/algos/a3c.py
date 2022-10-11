@@ -19,10 +19,10 @@ class A3CConfig:
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": 0.999,
+            "lambda": 0.9,
             "grad_clip": 40.0,
             "lr": 0.00005,
-            "lr_schedule": [[0, 0.00005], [100000, 0.00003]],
+            "lr_schedule": [[0, 0.00005], [1000, 0.00003]],
             "vf_loss_coeff": 0.5,
             "rollout_fragment_length": 50,
             "min_time_s_per_iteration": 10,

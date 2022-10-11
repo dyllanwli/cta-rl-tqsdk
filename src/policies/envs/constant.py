@@ -15,7 +15,7 @@ class EnvConfig:
                  end_dt: date = None,
                  live_market: bool = False,
                  live_account: TqAccount = None,
-                 wandb_name: str = None,
+                 wandb = None,
                  max_steps: int = 12000,  # max actions per episode
                  dataloader: str = "db",
                  intervals: List[Interval] = [
@@ -27,7 +27,7 @@ class EnvConfig:
         self.end_dt: date = end_dt
         self.live_market: bool = live_market
         self.live_account: TqAccount = live_account
-        self.wandb_name = wandb_name
+        self.wandb = wandb
 
         self.max_steps: int = max_steps
 
