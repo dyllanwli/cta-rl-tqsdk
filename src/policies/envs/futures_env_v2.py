@@ -17,9 +17,15 @@ from tqsdk.tafunc import time_to_datetime
 
 class FuturesEnvV2(gym.Env):
     """
+    Deprecated
+
+    
     Custom Environment for RL training
     TqApi is required.
-    Single symbol and interday only. 
+    Supported:
+        + multiple bar subscription
+        + single symbol
+        - factors
     """
     def __init__(self, config):
         super(gym.Env, self).__init__()

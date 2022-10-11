@@ -19,7 +19,8 @@ class PPOConfig:
             "clip_param": 0.3,
             "lambda": 0.999,
             "sgd_minibatch_size": 128,
-            "lr": 0.00005,
+            "lr": 0.00001,
+            "lr_schedule": [[0, 0.00001], [1000, 0.000005]],
             "vf_loss_coeff": 0.5,
             "model": {
                 "fcnet_hiddens": [256, 256],

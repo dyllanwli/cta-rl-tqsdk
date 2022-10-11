@@ -18,8 +18,7 @@ class EnvConfig:
                  wandb = None,
                  max_steps: int = 12000,  # max actions per episode
                  dataloader: str = "db",
-                 intervals: List[Interval] = [
-                     Interval.ONE_MIN, Interval.THIRTY_MIN],
+                 offline: bool = False,
                  ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
@@ -30,9 +29,7 @@ class EnvConfig:
         self.wandb = wandb
 
         self.max_steps: int = max_steps
-
-        self.dataloader: str = dataloader  # db or api
-        self.intervals: List[Interval] = intervals
+        self.offline: bool = offline
 
         # other config params
         self.init_balance: float = 2000000
