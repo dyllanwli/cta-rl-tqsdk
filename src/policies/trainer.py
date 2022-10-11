@@ -1,5 +1,7 @@
 
 from API import API
+import logging
+
 from .envs.constant import EnvConfig
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
@@ -13,8 +15,6 @@ from ray.air.result import Result
 from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
-import logging
-logging.getLogger('tensorflow').disabled = True
 
 
 # from .envs import FuturesEnvV2_2 as FuturesEnv
@@ -37,6 +37,7 @@ class RLTrainer:
             end_dt=date(2022, 3, 1),
             dataloader="db",
             wandb=self.wandb_name,
+            offline=True,
         )}
         self.env = FuturesEnv
 

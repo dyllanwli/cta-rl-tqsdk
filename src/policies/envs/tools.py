@@ -98,12 +98,19 @@ class DataLoader:
     def __init__(self, config: EnvConfig):
         self.config = config
 
-    def set_api(self) -> TqApi:
+    def get_api(self) -> TqApi:
         return self._set_account(
             self.config.auth, self.config.backtest, self.config.init_balance)
 
-    def set_offline_api(self):
-        pass
+    def get_offline_data(self, interval: Interval, instrument_id: str) -> pd.DataFrame:
+        self.mongo = MongoDAO()
+        self.start_dt = self.config.start_dt
+        self.end_dt = self.config.end_dt
+        df = self.mongo.load_bar_data(
+            instrument_id, self.start_dt, self.end_dt, interval)
+        return df 
+            
+
 
     def _prepare_data(self, config: EnvConfig):
         print("Preparing data...")
@@ -112,7 +119,7 @@ class DataLoader:
         self.end_dt = config.end_dt
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.instrument_list = get_symbols_by_names(config)
-        self.mongo = MongoDAO()
+        
         self.data: Dict[str, Dict[str, pd.DataFrame]] = dict()
         for instrument_id in self.instrument_list:
             self.data[instrument_id] = dict()
