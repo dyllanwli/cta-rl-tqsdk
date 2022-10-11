@@ -1,5 +1,6 @@
 from collections import deque
 import pandas as pd
+from datetime import date, datetime
 
 import numpy as np
 import gym
@@ -73,8 +74,9 @@ class TargetPosTaskOffline:
 # target_pos_task = TargetPosTaskOffline()
 
 
-df = pd.DataFrame(np.random.randn(10,6))
+d = date(2016, 1, 1)
 
-print(df)
 
-print(df.iloc[0:2])
+dt = datetime.fromisoformat(d.isoformat())
+
+print(dt)

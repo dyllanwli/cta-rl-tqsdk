@@ -69,14 +69,14 @@ class MongoDAO:
         )
         return collection
 
-    def load_bar_data(self, instrument_id: str, start: datetime, end: datetime, interval: Interval) -> pd.DataFrame:
+    def load_bar_data(self, instrument_id: str, start: date, end: date, interval: Interval) -> pd.DataFrame:
         collection = self.db['bar_' + interval.value]
         cursor = collection.find(
             {
                 "instrument_id": instrument_id,
                 "datetime": {
-                    "$gte": start,
-                    "$lte": end,
+                    "$gte": datetime.fromisoformat(start.isoformat()),
+                    "$lte": datetime.fromisoformat(end.isoformat()),
                 },
             },
             {

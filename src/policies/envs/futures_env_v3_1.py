@@ -69,7 +69,7 @@ class FuturesEnvV3_1(gym.Env):
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
         self.factor_length = 50
-        self.target_pos_task:  TargetPosTaskOffline = None
+        self.target_pos_task:  TargetPosTaskOffline = TargetPosTaskOffline() if self.offline else None
         self.data_length = config.data_length # data length for observation
         self.interval_1: str = Interval.ONE_SEC.value # interval name
         self.bar_length: int = 1000 # subscribed bar length
@@ -99,6 +99,7 @@ class FuturesEnvV3_1(gym.Env):
                 if self.target_pos_task is not None:
                     self.profit += self.target_pos_task.set_target_volume(
                         0, self.instrument_quote.last_price)
+                # self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
                 self.target_pos_task = TargetPosTaskOffline()
 
                 self.bar_1 = self.api.get_kline_serial(
@@ -117,6 +118,8 @@ class FuturesEnvV3_1(gym.Env):
             self.last_price = self.bar_1.iloc[-1]['close']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
             self.overall_steps += 1
+
+            state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(dtype=np.float64)
         else:
             # online state
             while True:
