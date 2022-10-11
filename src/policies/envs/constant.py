@@ -16,7 +16,7 @@ class EnvConfig:
                  live_market: bool = False,
                  live_account: TqAccount = None,
                  wandb_name: str = None,
-                 max_steps: int = 86400,  # max actions per episode
+                 max_steps: int = 12000,  # max actions per episode
                  dataloader: str = "db",
                  intervals: List[Interval] = [
                      Interval.ONE_MIN, Interval.THIRTY_MIN],
@@ -40,15 +40,15 @@ class EnvConfig:
         self.trade_position_ratio_limit: float = 0.9
 
         self.data_length: Dict[str, int] = {
-            Interval.ONE_SEC.value: 10,
-            Interval.FIVE_SEC.value: 10,
-            Interval.ONE_MIN.value: 10,
-            Interval.FIVE_MIN.value: 10,
-            Interval.FIFTEEN_MIN.value: 10,
-            Interval.THIRTY_MIN.value: 10,
-            Interval.ONE_HOUR.value: 10,
-            Interval.FOUR_HOUR.value: 10,
-            Interval.ONE_DAY.value: 10,
+            Interval.ONE_SEC.value: 5,
+            Interval.FIVE_SEC.value: 5,
+            Interval.ONE_MIN.value: 5,
+            Interval.FIVE_MIN.value: 5,
+            Interval.FIFTEEN_MIN.value: 5,
+            Interval.THIRTY_MIN.value: 5,
+            Interval.ONE_HOUR.value: 5,
+            Interval.FOUR_HOUR.value: 5,
+            Interval.ONE_DAY.value: 5,
         }
 
     @property

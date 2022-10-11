@@ -1,10 +1,10 @@
 from typing import Dict, List
 from datetime import datetime
-
+from collections import defaultdict, deque
 import numpy as np
 import pandas as pd
 from copy import deepcopy
-
+import logging
 from .constant import EnvConfig
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
@@ -35,8 +35,67 @@ duration_seconds: Dict[str, int] = {
     Interval.ONE_DAY: 86400,
 }
 
+class TargetPosTaskOffline:
+    def __init__(self, commission: float = 5.0, verbose: int = 1):
+        self.last_volume = 0
+        self.positions = deque([])
+        self.commission = commission
+        self.margin_rate = 2.0
+        if verbose == 0:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+    
+    def insert_order(self,):
+        # TODO insert order
+        pass
+
+    def set_target_volume(self, volume, price: float):
+        profit = 0
+        if self.last_volume == volume:
+            logging.debug("hold position")
+            return 0
+        if volume * self.last_volume > 0:
+            if volume > 0:
+                position_change = volume - self.last_volume
+                if position_change > 0:
+                    logging.debug("bug long %d", position_change)
+                    for _ in range(position_change):
+                        self.positions.append(price)
+                else:
+                    logging.debug("sell long %d", position_change)
+                    for _ in range(-position_change):
+                        profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
+            else:
+                position_change = self.last_volume - volume
+                if position_change > 0:
+                    logging.debug("buy short %d", position_change)
+                    for _ in range(position_change):
+                        self.positions.append(price)
+                else:
+                    logging.debug("sell short %d", position_change)
+                    for _ in range(-position_change):
+                        profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
+        else:
+            if volume >= 0:
+                logging.debug("sell short %d", self.last_volume)
+                while len(self.positions) > 0:
+                    profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
+                logging.debug("buy long %d", volume)
+                for _ in range(volume):
+                    self.positions.append(price)
+            else:
+                logging.debug("sell long %d", self.last_volume)
+                while len(self.positions) > 0:
+                    profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
+                logging.debug("buy short %d", volume)
+                for _ in range(-volume):
+                    self.positions.append(price)
+        self.last_volume = volume
+        return profit
 
 class DataLoader:
+    # TODO: add offline datasource on env v3
     def __init__(self, config: EnvConfig):
         self.dataloader = config.dataloader
 

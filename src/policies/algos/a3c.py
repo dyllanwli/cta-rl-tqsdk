@@ -1,12 +1,13 @@
-from ray.rllib.algorithms import ppo
+from ray.rllib.algorithms import a3c
 import gym
 
-class PPOConfig:
-    """PPO config for futures trading."""
+class A3CConfig:
+    """A3C config for futures trading."""
 
     def __init__(self, env: gym.Env, env_config):
         self.env = env
         self.config = {
+            # basic config 
             "env": env,
             "env_config": env_config,
             "num_workers": 1,
@@ -15,12 +16,16 @@ class PPOConfig:
             "num_gpus": 1,
             "framework": "tf",
             "horizon": 1000000,  # horizon need to be set
+            # A3C config
+            "use_critic": True,
             "use_gae": True,
-            "clip_param": 0.3,
             "lambda": 0.999,
-            "sgd_minibatch_size": 128,
+            "grad_clip": 40.0,
             "lr": 0.00005,
+            "lr_schedule": [[0, 0.00005], [100000, 0.00003]],
             "vf_loss_coeff": 0.5,
+            "rollout_fragment_length": 50,
+            "min_time_s_per_iteration": 10,
             "model": {
                 "fcnet_hiddens": [256, 256],
                 "use_lstm": True, # use LSTM or use attention
@@ -29,6 +34,7 @@ class PPOConfig:
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,
                 "_time_major": True,
+                # attention
                 "use_attention": False,
                 "attention_num_transformer_units": 1,
                 "attention_dim": 64,
@@ -40,7 +46,7 @@ class PPOConfig:
             },
         }
     
-    def trainer(self) -> ppo.PPO:
-        config = ppo.DEFAULT_CONFIG.copy()
+    def trainer(self) -> a3c.A3C:
+        config = a3c.DEFAULT_CONFIG.copy()
         config.update(self.config)
-        return ppo.PPO(env=self.env, config=config)
+        return a3c.A3C(env=self.env, config=config)

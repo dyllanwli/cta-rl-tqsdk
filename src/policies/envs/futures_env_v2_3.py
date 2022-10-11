@@ -11,6 +11,7 @@ from gym.utils import seeding
 
 from .constant import EnvConfig
 from .tools import get_symbols_by_names, TargetPosTaskOffline
+from .factors import Factors
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
@@ -19,7 +20,7 @@ from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 from utils import Interval
 
 
-class FuturesEnvV2_2(gym.Env):
+class FuturesEnvV2_3(gym.Env):
     """
     Custom Environment for RL training
     TqApi is required.
@@ -32,7 +33,7 @@ class FuturesEnvV2_2(gym.Env):
     def __init__(self, config):
         super(gym.Env, self).__init__()
         config: EnvConfig = config['cfg']
-        
+
         # wandb.init(project="futures-trading", name = config.wandb_name)
 
         self._skip_env_checking = True
@@ -53,6 +54,7 @@ class FuturesEnvV2_2(gym.Env):
         symbol = get_symbols_by_names(config)[0]
         self.instrument_quote = self.api.get_quote(symbol)
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
+        self.factors = Factors()
 
         # Account and API
         self.data_length = config.data_length
@@ -63,27 +65,34 @@ class FuturesEnvV2_2(gym.Env):
         self.max_steps = config.max_steps
         self.action_space: spaces.Box = spaces.Box(
             low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64)
+
+        self.factor_length = 50
         self.observation_space: spaces.Dict = spaces.Dict({
             # "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
-            "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
+            # "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
+            # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
             Interval.ONE_SEC.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_SEC.value], 5), dtype=np.float64),
-            Interval.ONE_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_MIN.value], 5), dtype=np.float64),
-            Interval.THIRTY_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.THIRTY_MIN.value], 5), dtype=np.float64),
-            # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
+            # Interval.ONE_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_MIN.value], 5), dtype=np.float64),
+            # Interval.THIRTY_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.THIRTY_MIN.value], 5), dtype=np.float64),
+            "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
+            "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
         })
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
         """
         Set account and API for TqApi
+        If you want to use free backtest, remove backtest parameter
+        e.g. 
+            api: TqApi = TqApi(auth=auth, account=TqSim(init_balance=init_balance))
         """
         api = None
         if backtest is not None:
             # backtest
             print("Backtest mode")
-            api: TqApi = TqApi(auth=auth, backtest=backtest,
-                               account=TqSim(init_balance=init_balance))
+            api: TqApi = TqApi(auth=auth, account=TqSim(init_balance=init_balance), 
+                backtest=backtest,
+            )
         else:
             # live or sim
             if live_market:
@@ -102,19 +111,17 @@ class FuturesEnvV2_2(gym.Env):
             print("Updating subscription")
             self.underlying_symbol = self.instrument_quote.underlying_symbol
             if self.target_pos_task is not None:
-                self.profit += self.target_pos_task.set_target_volume(0, self.instrument_quote.last_price)
+                self.profit += self.target_pos_task.set_target_volume(
+                    0, self.instrument_quote.last_price)
             # self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
             self.target_pos_task = TargetPosTaskOffline()
 
             self.bar_1s = self.api.get_kline_serial(
-                self.underlying_symbol, 1, data_length=self.data_length[Interval.ONE_SEC.value])
-            self.bar_1m = self.api.get_kline_serial(
-                self.underlying_symbol, 60, data_length=self.data_length[Interval.ONE_MIN.value])
-            self.bar_30m = self.api.get_kline_serial(
-                self.underlying_symbol, 1800, data_length=self.data_length[Interval.THIRTY_MIN.value])
-
-            # self.bar_1d = self.api.get_kline_serial(
-            #     self.underlying_symbol, 86400, data_length=self.data_length['bar_1d'])
+                self.underlying_symbol, 1, data_length=1000)
+            # self.bar_1m = self.api.get_kline_serial(
+            # self.underlying_symbol, 60, data_length=200)
+            # self.bar_30m = self.api.get_kline_serial(
+            # self.underlying_symbol, 1800, data_length=200)
 
     def _reward_function(self):
         # Reward is the profit of the last action
@@ -122,26 +129,27 @@ class FuturesEnvV2_2(gym.Env):
         return self.profit
 
     def _get_state(self):
-        now = time_to_datetime(self.instrument_quote.datetime)
+        # now = time_to_datetime(self.instrument_quote.datetime)
         while True:
             self.api.wait_update()
             if self.api.is_changing(self.bar_1s.iloc[-1], "datetime"):
 
-                bar_1s = self.bar_1s[self.OHLCV].to_numpy(dtype=np.float64)
-                bar_1m = self.bar_1m[self.OHLCV].to_numpy(dtype=np.float64)
-                bar_30m = self.bar_30m[self.OHLCV].to_numpy(dtype=np.float64)
+                bar_1s = self.bar_1s[self.OHLCV].iloc[-self.data_length[Interval.ONE_SEC.value]:].to_numpy(dtype=np.float64)
+                # bar_1m = self.bar_1m[self.OHLCV].iloc[-self.data_length[Interval.ONE_MIN.value]:].to_numpy(dtype=np.float64)
+                # bar_30m = self.bar_30m[self.OHLCV].iloc[-self.data_length[Interval.THIRTY_MIN.value]:].to_numpy(dtype=np.float64)
 
                 state = dict({
                     # "last_volume": np.array([self.last_volume], dtype=np.int64),
                     "last_price": np.array([self.instrument_quote.last_price], dtype=np.float64),
-                    "hour": np.array([now.hour], dtype=np.int64),
-                    "minute": np.array([now.minute], dtype=np.int64),
+                    # "hour": np.array([now.hour], dtype=np.int64),
+                    # "minute": np.array([now.minute], dtype=np.int64),
                     Interval.ONE_SEC.value: bar_1s,
-                    Interval.ONE_MIN.value: bar_1m,
-                    Interval.THIRTY_MIN.value: bar_30m,
-                    # "bar_1d": bar_1d
+                    # Interval.ONE_MIN.value: bar_1m,
+                    # Interval.THIRTY_MIN.value: bar_30m,
+                    "rsi": np.array(self.factors.rsi(self.bar_1s[-self.factor_length:], n=30)[-self.factor_length:], dtype=np.float64),
+                    "macd_bar": np.array(self.factors.macd_bar(self.bar_1s.iloc[-self.factor_length:], short=60, long=120, m=30), dtype=np.float64),
                 })
-                if np.isnan(bar_1s).any() or np.isnan(bar_1m).any() or np.isnan(bar_30m).any():
+                if np.isnan(bar_1s).any():
                     self.api.wait_update()
                 else:
                     return state
@@ -150,11 +158,12 @@ class FuturesEnvV2_2(gym.Env):
         try:
             assert self.action_space.contains(action)
             action = action[0]
-            self.profit = self.target_pos_task.set_target_volume(action, self.instrument_quote.last_price)
+            self.profit = self.target_pos_task.set_target_volume(
+                action, self.instrument_quote.last_price)
             self.api.wait_update()
             self.reward = self._reward_function()
             state = self._get_state()
-            self.last_volume = deepcopy(action)
+            # self.last_volume = deepcopy(action)
             self.steps += 1
 
             self._update_subscription()
@@ -165,7 +174,8 @@ class FuturesEnvV2_2(gym.Env):
             return state, self.reward, self.done, self.info
         except Exception as e:
             print("Error in step, resetting position to 0")
-            self.target_pos_task.set_target_volume(0, self.instrument_quote.last_price)
+            self.target_pos_task.set_target_volume(
+                0, self.instrument_quote.last_price)
             self.api.wait_update()
             raise e
 
@@ -176,7 +186,7 @@ class FuturesEnvV2_2(gym.Env):
         print("Resetting")
         self.done = False
         self.steps = 0
-        self.last_volume = 0  # last target position volume
+        # self.last_volume = 0  # last target position volume
         self.last_commision = 0
         self.reward = 0
         self.accumulated_reward = 0
@@ -207,7 +217,7 @@ class FuturesEnvV2_2(gym.Env):
             "training_info/time": time_to_s_timestamp(self.instrument_quote.datetime),
             "training_info/reward": self.reward,
             # "commision_change": self.account.commission - self.last_commision,
-            "training_info/last_volume": self.last_volume,
+            # "training_info/last_volume": self.last_volume,
             "training_info/accumulated_reward": self.accumulated_reward,
             "training_info/profit": self.profit,
             "training_info/last_price": self.instrument_quote.last_price,

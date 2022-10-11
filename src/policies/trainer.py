@@ -3,15 +3,18 @@ import logging
 from tabnanny import verbose
 logging.getLogger('tensorflow').disabled = True
 import wandb
+from pprint import pprint
 
 from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
 from .envs.constant import EnvConfig
-from .envs import FuturesEnvV2_2 as FuturesEnv
+# from .envs import FuturesEnvV2_2 as FuturesEnv
+from .envs import FuturesEnvV2_3 as FuturesEnv
 from .algos import Algos
 from datetime import date, datetime
 
 import gym
 from ray import air, tune
+from ray.air.result import Result
 from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 
@@ -34,11 +37,10 @@ class RLTrainer:
 
         self.cb = [WandbLoggerCallback(
             project="futures-trading",
-            name=wandb_name,
             log_config=True,
         )]
 
-        ray.init(logging_level=logging.INFO, num_cpus=20, num_gpus=1)
+        ray.init(logging_level=logging.INFO, num_cpus=40, num_gpus=1)
 
     async def wandb_log(self, result):
         if result:
@@ -53,28 +55,38 @@ class RLTrainer:
                 wandb.log(
                     {"sampler_results/" + k: result['sampler_results'][k]})
 
-    def train(self, algo_name: str = "PPO"):
+    def train(self, algo_name: str = "A3C", type: str = "tune"):
         algos = Algos(name=algo_name, env=self.env,
                       env_config=self.env_config)
-        stop = {
-            "training_iteration": 1000000,
-            "episode_reward_mean": 1000,
-        }
-        tuner = tune.Tuner(algo_name, param_space=algos.config,
-                           run_config=air.RunConfig(
-            name = "futures-trading",
-            stop=stop,
-            checkpoint_config=air.CheckpointConfig(
-                checkpoint_frequency=100),
-            callbacks=self.cb
-        ))
-        results = tuner.fit()
+        if type == "tune":
+            stop = {
+                "training_iteration": 1000000,
+                "episode_reward_mean": 1000,
+            }
+            tuner = tune.Tuner(algo_name, param_space=algos.config,
+                            run_config=air.RunConfig(
+                name = "futures-trading",
+                stop=stop,
+                checkpoint_config=air.CheckpointConfig(
+                    checkpoint_frequency=100),
+                callbacks=self.cb
+            ))
+            results = tuner.fit()
 
-        metric = "episode_reward_mean"
+            metric = "episode_reward_mean"
 
-        best_result = results.get_best_result(metric, mode="max")
-        print("Best result:", best_result)
-        print("Checkpoint path:", best_result["checkpoint"])
+            best_result: Result = results.get_best_result(metric, mode="max")
+            print("Best result:", best_result)
+            print("Checkpoints path:", best_result.best_checkpoints)
+        else:
+            trainer = algos.trainer
+            for i in range(1000000):
+                result = trainer.train()
+                print(pprint(result))
+                # self.wandb_log(result)
+                if i % 100 == 0:
+                    checkpoint = trainer.save(checkpoint_dir="checkpoints")
+                    print("checkpoint saved at", checkpoint)
 
         ray.shutdown()
 
