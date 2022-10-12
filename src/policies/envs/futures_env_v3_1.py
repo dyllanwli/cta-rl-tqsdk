@@ -88,6 +88,12 @@ class FuturesEnvV3_1(gym.Env):
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
         })
+    def _set_target_volume(self, volume: int):
+        if self.offline:
+            self.profit = self.target_pos_task.set_target_volume(volume, self.last_price)
+        else:
+            self.target_pos_task.set_target_volume(volume)
+            self.api.wait_update()
 
     def _update_subscription(self):
         if not self.offline:
@@ -97,10 +103,9 @@ class FuturesEnvV3_1(gym.Env):
                 print("Updating subscription")
                 self.underlying_symbol = self.instrument_quote.underlying_symbol
                 if self.target_pos_task is not None:
-                    self.profit += self.target_pos_task.set_target_volume(
-                        0, self.instrument_quote.last_price)
-                # self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
-                self.target_pos_task = TargetPosTaskOffline()
+                    self._set_target_volume(0)
+                self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
+
 
                 self.bar_1 = self.api.get_kline_serial(
                     self.underlying_symbol, 1, data_length=self.bar_length)
@@ -163,8 +168,7 @@ class FuturesEnvV3_1(gym.Env):
         try:
             assert self.action_space.contains(action)
             action = action[0]
-            self.profit = self.target_pos_task.set_target_volume(
-                action, self.last_price)
+            self._set_target_volume(action)
             state = self._get_state()
             self.reward = self._reward_function()
             self.last_volume = action
@@ -180,10 +184,7 @@ class FuturesEnvV3_1(gym.Env):
             return state, self.reward, self.done, self.info
         except Exception as e:
             print("Error in step, resetting position to 0")
-            self.target_pos_task.set_target_volume(
-                0, self.last_price)
-            if not self.offline:
-                self.api.wait_update()
+            self._set_target_volume(0)
             raise e
 
     def log_info(self,):

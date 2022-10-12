@@ -35,6 +35,7 @@ class MongoDAO:
         self.db: Database = self.client[self.db_name]
 
         # Initialize collections
+        self._init_collection('bar', Interval.ONE_SEC)
         self._init_collection('bar', Interval.ONE_MIN)
         self._init_collection('bar', Interval.FIVE_MIN)
         self._init_collection('bar', Interval.FIFTEEN_MIN)
@@ -271,7 +272,7 @@ class MongoDAO:
                             self.ticks_data[instrument] = []
                         if intervals is None or "1s" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1s[instrument], Interval.ONE_MIN)
+                                            self.bars_data_1s[instrument], Interval.ONE_SEC)
                             self.bars_data_1s[instrument] = []
                         if intervals is None or "1m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,

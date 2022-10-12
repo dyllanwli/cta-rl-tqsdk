@@ -10,7 +10,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a3')
+    tqAPI = API(account='a1')
     # tqAPI.test()
     # cmod = Commodity()
     # symbol = cmod.get_instrument_name('egg')
@@ -18,7 +18,7 @@ def main():
     # dao.download_data(tqAPI.auth, ['cotton', 'methanol'], date(2016, 10, 25), date(2022, 2, 1))
     # dao.download_data(tqAPI.auth, ['rebar'], date(2016, 10, 25), date(2022, 2, 1))
     intervals = {'1s', '1d'}
-    dao.download_data(tqAPI.auth, ['cotton'], date(2016, 1, 1), date(2022, 9, 1), intervals)
+    dao.download_data(tqAPI.auth, ['soybean'], date(2016, 11, 2), date(2022, 9, 1), intervals)
     # init wandb by symbol and datetime
     # wandb.init(project="tqrl-dev",
             #    name=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
