@@ -21,10 +21,10 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
-        self.train_type = train_type
+        self.train_type = train_type # tune or train
         self.algo_name = "SAC"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
@@ -37,11 +37,12 @@ class RLTrainer:
             end_dt=date(2022, 3, 1),
             dataloader="db",
             wandb=self.wandb_name,
-            offline=True,
+            is_offline= True,
+            is_random_sample = True,
         )}
         self.env = FuturesEnv
 
-        ray.init(logging_level=logging.INFO, num_cpus=40, num_gpus=1)
+        ray.init(logging_level=logging.INFO, num_cpus=60, num_gpus=1)
 
     def train(self,):
         algos = Algos(name=self.algo_name, env=self.env,

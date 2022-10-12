@@ -17,8 +17,8 @@ class EnvConfig:
                  live_account: TqAccount = None,
                  wandb = None,
                  max_steps: int = 12000,  # max actions per episode
-                 dataloader: str = "db",
-                 offline: bool = False,
+                 is_offline: bool = False,
+                 is_random_sample: bool = False,
                  ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
@@ -28,8 +28,10 @@ class EnvConfig:
         self.live_account: TqAccount = live_account
         self.wandb = wandb
 
+        # dataloader settings
         self.max_steps: int = max_steps
-        self.offline: bool = offline
+        self.is_offline: bool = is_offline
+        self.is_random_sample: bool = is_random_sample
 
         # other config params
         self.init_balance: float = 2000000

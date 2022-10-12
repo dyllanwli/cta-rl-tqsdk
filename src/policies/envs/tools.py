@@ -97,36 +97,23 @@ class TargetPosTaskOffline:
 class DataLoader:
     def __init__(self, config: EnvConfig):
         self.config = config
+        self.is_random_sample = config.is_random_sample
 
     def get_api(self) -> TqApi:
         return self._set_account(
             self.config.auth, self.config.backtest, self.config.init_balance)
 
     def get_offline_data(self, interval: Interval, instrument_id: str) -> pd.DataFrame:
-        self.mongo = MongoDAO()
-        self.start_dt = self.config.start_dt
-        self.end_dt = self.config.end_dt
-        df = self.mongo.load_bar_data(
-            instrument_id, self.start_dt, self.end_dt, interval)
-        return df 
-            
-
-
-    def _prepare_data(self, config: EnvConfig):
-        print("Preparing data...")
-        self.data_length = config.data_length
-        self.start_dt = config.start_dt
-        self.end_dt = config.end_dt
-        self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
-        self.instrument_list = get_symbols_by_names(config)
-        
-        self.data: Dict[str, Dict[str, pd.DataFrame]] = dict()
-        for instrument_id in self.instrument_list:
-            self.data[instrument_id] = dict()
-            for interval in self.intervals:
-                df = self.mongo.load_bar_data(
-                    instrument_id, self.start_dt, self.end_dt, interval)
-                self.data[instrument_id][interval] = df[self.OHLCV].to_numpy(dtype=np.float64)
+        print("dataloader: Loading offline data...")
+        if self.is_random_sample:
+            pass
+        else:
+            self.mongo = MongoDAO()
+            self.start_dt = self.config.start_dt
+            self.end_dt = self.config.end_dt
+            df = self.mongo.load_bar_data(
+                instrument_id, self.start_dt, self.end_dt, interval)
+            return df
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
         """

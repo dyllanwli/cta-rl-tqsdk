@@ -2,6 +2,8 @@ from collections import deque
 import pandas as pd
 from datetime import date, datetime
 
+from tqsdk.tafunc import time_to_s_timestamp
+
 import numpy as np
 import gym
 # from gym import spaces
@@ -74,9 +76,17 @@ class TargetPosTaskOffline:
 # target_pos_task = TargetPosTaskOffline()
 
 
-d = date(2016, 1, 1)
+start_dt = date(2016, 1, 1)
+end_dt = date(2022, 9, 1)
 
+start_dt = datetime.combine(start_dt, datetime.min.time())
+end_dt = datetime.combine(end_dt, datetime.max.time())
 
-dt = datetime.fromisoformat(d.isoformat())
+print(start_dt)
+
+low_dt = time_to_s_timestamp(start_dt)
+high_dt = time_to_s_timestamp(end_dt)
+
+dt = np.random.randint(low = low_dt, high = high_dt, size=1)
 
 print(dt)

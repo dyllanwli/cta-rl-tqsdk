@@ -12,10 +12,10 @@ class SACConfig:
             "env": env,
             "env_config": env_config,
             "num_workers": 1,
-            "num_envs_per_worker": 4,
-            "num_cpus_per_worker": 20,
-            "num_gpus": 1,
-            "framework": "tf",
+            "num_envs_per_worker": 1,
+            # "num_cpus_per_worker": 10,
+            "num_gpus": 0,
+            "framework": "torch",
             "horizon": 1000000,  # horizon need to be set
             "train_batch_size": 200,  # shoule be >= rollout_fragment_length
             # SAC config

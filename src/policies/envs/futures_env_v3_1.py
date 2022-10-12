@@ -31,6 +31,7 @@ class FuturesEnvV3_1(gym.Env):
         - factors
         + Offline TargetPosTask
         + Offline Data
+        + TODO: update dataloader distribution
     """
 
     def __init__(self, config):
@@ -39,41 +40,34 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading", name = self.wandb)
+            wandb.init(project="futures-trading", name=self.wandb)
 
         self._skip_env_checking = True
         self._set_config(config)
         self.seed(42)
-
         self.reset()
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
-        print("Setting config")
-        self.offline = config.offline
-        dataloader = DataLoader(config)
-        symbol = get_symbols_by_names(config)[0]
-        if self.offline:
-            # get offline data from db
-            self.offline_data: pd.DataFrame = dataloader.get_offline_data(interval = Interval.ONE_SEC, instrument_id=symbol)
-            self.overall_steps = 0
+        print("env: Setting config")
+        self.is_offline = config.is_offline
+        self.is_random_sample = config.is_random_sample
+        self.dataloader = DataLoader(config)
+        self.symbol = get_symbols_by_names(config)[0]
+        if self.is_offline:
+            self._set_offline_data()
         else:
-            self.api: TqApi = dataloader.get_api()
-            self.account = self.api.get_account()
-            self.balance = deepcopy(self.account.balance)
-
-            self.instrument_quote = self.api.get_quote(symbol)
-            self.underlying_symbol = self.instrument_quote.underlying_symbol
+            self._set_api_data()
 
         # Trading config
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
         self.factor_length = 50
-        self.target_pos_task = TargetPosTaskOffline() if self.offline else None
-        self.data_length = config.data_length # data length for observation
-        self.interval_1: str = Interval.ONE_SEC.value # interval name
-        self.bar_length: int = 1000 # subscribed bar length
-        
+        self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
+        self.data_length = config.data_length  # data length for observation
+        self.interval_1: str = Interval.ONE_SEC.value  # interval name
+        self.bar_length: int = 1000  # subscribed bar length
+
         # RL config
         self.max_steps = config.max_steps
         self.action_space: spaces.Box = spaces.Box(
@@ -89,27 +83,40 @@ class FuturesEnvV3_1(gym.Env):
             "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
         })
 
+    def _set_offline_data(self):
+        # get offline data from db
+        self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
+            interval=Interval.ONE_SEC, instrument_id=self.symbol)
+        self.overall_steps = 0
+
+    def _set_api_data(self):
+        self.api: TqApi = self.dataloader.get_api()
+        self.account = self.api.get_account()
+        self.balance = deepcopy(self.account.balance)
+        self.instrument_quote = self.api.get_quote(self.symbol) 
+        self.underlying_symbol = self.instrument_quote.underlying_symbol
+
     def _set_target_volume(self, volume: int):
-        if self.offline:
-            self.profit = self.target_pos_task.set_target_volume(volume, self.last_price)
+        if self.is_offline:
+            self.profit = self.target_pos_task.set_target_volume(
+                volume, self.last_price)
         else:
             self.target_pos_task.set_target_volume(volume)
             self.api.wait_update()
 
     def _update_subscription(self):
-        if not self.offline:
+        if not self.is_offline:
             self.api.wait_update()
             # update quote subscriptions when underlying_symbol changes
             if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
-                print("Updating subscription")
+                print("env: Updating subscription")
                 self.underlying_symbol = self.instrument_quote.underlying_symbol
                 if self.target_pos_task is not None:
                     self._set_target_volume(0)
-                self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
-
+                self.target_pos_task = TargetPosTask(
+                    self.api, self.underlying_symbol, offset_priority="昨今开")
                 self.bar_1 = self.api.get_kline_serial(
                     self.underlying_symbol, 1, data_length=self.bar_length)
-
 
     def _reward_function(self):
         # Reward is the profit of the last action
@@ -117,9 +124,10 @@ class FuturesEnvV3_1(gym.Env):
         return self.profit
 
     def _get_state(self):
-        if self.offline:
+        if self.is_offline:
             # offline state
-            self.bar_1 = self.offline_data.iloc[self.overall_steps:self.overall_steps+self.bar_length]
+            self.bar_1 = self.offline_data.iloc[self.overall_steps:
+                                                self.overall_steps+self.bar_length]
             self.last_price = self.bar_1.iloc[-1]['close']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
             self.overall_steps += 1
@@ -131,7 +139,8 @@ class FuturesEnvV3_1(gym.Env):
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
 
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(dtype=np.float64)
+                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(
+                        dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.last_datatime = self.instrument_quote.datetime
                     if np.isnan(state_1).any():
@@ -151,7 +160,7 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        print("Resetting")
+        print("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_volume = 0  # last target position volume
@@ -160,12 +169,15 @@ class FuturesEnvV3_1(gym.Env):
         self.accumulated_reward = 0
         self.profit = 0
         self._update_subscription()
+        if self.is_random_sample:
+            self._set_offline_data()
         state = self._get_state()
         self.log_info()
         return state
 
     def step(self, action):
         try:
+            print(action)
             assert self.action_space.contains(action)
             action = action[0]
             self._set_target_volume(action)
@@ -179,15 +191,16 @@ class FuturesEnvV3_1(gym.Env):
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
-                    wandb.log({"training_info/accumulated_reward": self.accumulated_reward})
+                    wandb.log(
+                        {"training_info/accumulated_reward": self.accumulated_reward})
             return state, self.reward, self.done, self.info
         except Exception as e:
-            print("Error in step, resetting position to 0")
+            print("env: Error in step, resetting position to 0")
             self._set_target_volume(0)
             raise e
 
     def log_info(self,):
-        if self.offline: 
+        if self.is_offline:
             self.info = {
                 "training_info/time": time_to_s_timestamp(self.last_datatime),
                 "training_info/last_volume": self.last_volume,
