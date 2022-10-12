@@ -31,6 +31,7 @@ class A2CConfig:
             "min_time_s_per_iteration": 100,
             "model": {
                 "fcnet_hiddens": [256, 256],
+                "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
                 "max_seq_len": 50,
                 "lstm_cell_size": 256,

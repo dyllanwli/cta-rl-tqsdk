@@ -55,7 +55,7 @@ class FuturesEnvV3_1(gym.Env):
         symbol = get_symbols_by_names(config)[0]
         if self.offline:
             # get offline data from db
-            self.offline_data: pd.DataFrame = dataloader.get_offline_data(interval = Interval.ONE_MIN, instrument_id=symbol)
+            self.offline_data: pd.DataFrame = dataloader.get_offline_data(interval = Interval.ONE_SEC, instrument_id=symbol)
             self.overall_steps = 0
         else:
             self.api: TqApi = dataloader.get_api()

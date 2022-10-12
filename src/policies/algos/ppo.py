@@ -24,6 +24,7 @@ class PPOConfig:
             "vf_loss_coeff": 0.5,
             "model": {
                 "fcnet_hiddens": [256, 256],
+                "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
                 "max_seq_len": 50,
                 "lstm_cell_size": 256,

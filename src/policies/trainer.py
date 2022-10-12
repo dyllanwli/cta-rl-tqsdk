@@ -25,7 +25,7 @@ class RLTrainer:
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type
-        self.algo_name = "A3C"
+        self.algo_name = "SAC"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
