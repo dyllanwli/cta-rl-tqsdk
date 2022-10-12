@@ -40,7 +40,7 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading-2", name=self.wandb)
+            wandb.init(project="futures-trading-2", name=self.wandb, group="train")
 
         self._skip_env_checking = True
         self._set_config(config)
@@ -70,12 +70,16 @@ class FuturesEnvV3_1(gym.Env):
             self._set_api_data()
 
         # RL config
+        self.action_space_type = config.action_space_type
         self.max_steps = config.max_steps
-        self.action_space: spaces.Box = spaces.Box(
-            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64)
+        self.max_action = config.max_volume
+        if self.action_space_type == "discrete":
+            self.action_space: spaces.Discrete = spaces.Discrete(21)
+        else:
+            self.action_space: spaces.Box = spaces.Box(
+                low=0, high=self.max_action*2, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            # "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             # "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
             # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
@@ -180,7 +184,11 @@ class FuturesEnvV3_1(gym.Env):
     def step(self, action):
         try:
             assert self.action_space.contains(action)
-            action = action[0]
+            if self.action_space_type == "discrete":
+                action = int(action) - 10
+            else:
+                action = int(action[0]) - 10
+                
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
@@ -197,7 +205,7 @@ class FuturesEnvV3_1(gym.Env):
             self.log_info()
             return state, self.reward, self.done, self.info
         except Exception as e:
-            print("env: Error in step, resetting position to 0")
+            print("env: Error in step, resetting position to 0. Action: ", action)
             self._set_target_volume(0)
             raise e
 

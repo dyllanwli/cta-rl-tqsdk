@@ -17,7 +17,6 @@ class SACConfig:
             "num_gpus": 0,
             "framework": "torch",
             "horizon": 1000000,  # horizon need to be set
-            "train_batch_size": 200,  # shoule be >= rollout_fragment_length
             # SAC config
             "twin_q": True,
             "q_model_config": {
@@ -32,7 +31,7 @@ class SACConfig:
                 "post_fcnet_hiddens": [],
                 "post_fcnet_activation": None,
             },
-            "clip_actions": False,
+            "clip_actions": True,
             "tau": 0.005,
             "initial_alpha": 0.5,
             "target_entropy": "auto",
@@ -64,7 +63,7 @@ class SACConfig:
             "rollout_fragment_length": 20,
             "compress_observations": False,
             # .trainig
-            "train_batch_size": 256,
+            "train_batch_size": 256, # shoule be >= rollout_fragment_length
             # .reporting
             "min_time_s_per_iteration": 1,
             "min_sample_timesteps_per_iteration": 100,

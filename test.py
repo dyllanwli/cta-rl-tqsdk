@@ -2,10 +2,11 @@ from collections import deque
 import pandas as pd
 from datetime import date, datetime
 
-from tqsdk.tafunc import time_to_s_timestamp, time_to_datetime
+# from tqsdk.tafunc import time_to_s_timestamp, time_to_datetime
 
 import numpy as np
 import gym
+from gym import spaces
 # from gym import spaces
 # action_space : spaces.Box = spaces.Box(
 #             low=-30, high=30, shape=(1,), dtype=np.int64)
@@ -75,25 +76,10 @@ class TargetPosTaskOffline:
 
 # target_pos_task = TargetPosTaskOffline()
 
-
-max_steps = 40000 # seconds
-start_dt = date(2016, 1, 1)
-end_dt = date(2022, 9, 1)
-
-start_dt = datetime.combine(start_dt, datetime.min.time())
-end_dt = datetime.combine(end_dt, datetime.max.time())
-
-print("start_dt", start_dt)
-
-low_dt = time_to_s_timestamp(start_dt)
-high_dt = time_to_s_timestamp(end_dt) - max_steps
-
-sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
-sample_end = sample_start + max_steps
-
-start_dt = time_to_datetime(sample_start)
-end_dt = time_to_datetime(sample_end)
+max_action = 10
+action_space: spaces.Box = spaces.Box(
+                low=0, high=max_action*2+1, shape=(1,), dtype=np.int64)
 
 
-print("start_dt", start_dt.date())
-print("end_dt", end_dt)
+print(action_space.sample())
+print(action_space.contains([0]))

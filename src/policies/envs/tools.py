@@ -45,7 +45,7 @@ class TargetPosTaskOffline:
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
-            logging.basicConfig(level=print)
+            logging.basicConfig(level=logging.INFO)
     
     def insert_order(self,):
         # TODO insert order
