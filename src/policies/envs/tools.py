@@ -119,13 +119,13 @@ class DataLoader:
 
             sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
             sample_start_dt = time_to_datetime(sample_start).date()
-            logging.INFO("dataloader: Loading random offline data from ", sample_start_dt)
+            logging.info("dataloader: Loading random offline data from ", sample_start_dt)
             df = self.mongo.load_bar_data(
                 instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
-            logging.INFO("dataloader: random offline data loaded, shape: ", df.shape)
+            logging.info("dataloader: random offline data loaded, shape: ", df.shape)
             return df
         else:
-            logging.INFO("dataloader: Loading offline data...")
+            logging.info("dataloader: Loading offline data...")
             df = self.mongo.load_bar_data(
                 instrument_id, self.start_dt, self.end_dt, interval)
             return df
@@ -140,18 +140,18 @@ class DataLoader:
         api = None
         if backtest is not None:
             # backtest
-            logging.INFO("Backtest mode")
+            logging.info("Backtest mode")
             api: TqApi = TqApi(auth=auth, account=TqSim(init_balance=init_balance), 
                 backtest=backtest,
             )
         else:
             # live or sim
             if live_market:
-                logging.INFO("Live market mode")
+                logging.info("Live market mode")
                 api = TqApi(
                     account=live_account, auth=auth)
             else:
-                logging.INFO("Sim mode")
+                logging.info("Sim mode")
                 api = TqApi(auth=auth, account=TqSim(
                     init_balance=init_balance))
         return api

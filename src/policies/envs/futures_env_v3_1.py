@@ -40,7 +40,7 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading", name=self.wandb)
+            wandb.init(project="futures-trading-2", name=self.wandb)
 
         self._skip_env_checking = True
         self._set_config(config)
@@ -49,7 +49,7 @@ class FuturesEnvV3_1(gym.Env):
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
-        logging.INFO("env: Setting config")
+        logging.info("env: Setting config")
         # data config
         self.is_offline = config.is_offline
         self.is_random_sample = config.is_random_sample
@@ -110,7 +110,7 @@ class FuturesEnvV3_1(gym.Env):
             self.api.wait_update()
             # update quote subscriptions when underlying_symbol changes
             if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
-                logging.INFO("env: Updating subscription")
+                logging.info("env: Updating subscription")
                 self.underlying_symbol = self.instrument_quote.underlying_symbol
                 if self.target_pos_task is not None:
                     self._set_target_volume(0)
@@ -161,7 +161,7 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        logging.INFO("env: Resetting")
+        logging.info("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_volume = 0  # last target position volume
@@ -196,7 +196,7 @@ class FuturesEnvV3_1(gym.Env):
             self.log_info()
             return state, self.reward, self.done, self.info
         except Exception as e:
-            logging.INFO("env: Error in step, resetting position to 0")
+            logging.info("env: Error in step, resetting position to 0")
             self._set_target_volume(0)
             raise e
 

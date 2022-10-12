@@ -5,8 +5,6 @@ import logging
 from .envs.constant import EnvConfig
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
-import wandb
-from wandb.wandb_run import Run as WandbRun
 from pprint import pprint
 from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
 import gym
@@ -21,7 +19,7 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "tune"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type # tune or train

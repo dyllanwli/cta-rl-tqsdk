@@ -10,8 +10,8 @@ class A3CConfig:
             # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": 2,
-            "num_envs_per_worker": 2,
+            "num_workers": 1,
+            "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
             "num_gpus": 1,
             "framework": "tf",
@@ -25,7 +25,7 @@ class A3CConfig:
             "lr_schedule": [[0, 0.00001], [1000, 0.000005]],
             "vf_loss_coeff": 0.5,
             "rollout_fragment_length": 50,
-            "min_time_s_per_iteration": 10,
+            "min_time_s_per_iteration": 50,
             "model": {
                 "fcnet_hiddens": [256, 256],
                 "fcnet_activation": "relu",
