@@ -25,17 +25,17 @@ class RLTrainer:
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type # tune or train
-        self.algo_name = "SAC"
+        self.algo_name = "A3C"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
+        # only trainer mode will log to wandb in env
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2022, 3, 1),
-            dataloader="db",
+            end_dt=date(2018, 3, 1),
             wandb=self.wandb_name,
             is_offline= True,
             is_random_sample = True,
@@ -54,7 +54,7 @@ class RLTrainer:
                 "episode_reward_mean": 1000,
             }
             cb = [WandbLoggerCallback(
-                project="futures-trading",
+                project="futures-trading-2",
                 group="tune",
                 log_config=True,
             )]

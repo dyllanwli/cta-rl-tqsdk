@@ -2,7 +2,7 @@ from collections import deque
 import pandas as pd
 from datetime import date, datetime
 
-from tqsdk.tafunc import time_to_s_timestamp
+from tqsdk.tafunc import time_to_s_timestamp, time_to_datetime
 
 import numpy as np
 import gym
@@ -76,17 +76,24 @@ class TargetPosTaskOffline:
 # target_pos_task = TargetPosTaskOffline()
 
 
+max_steps = 40000 # seconds
 start_dt = date(2016, 1, 1)
 end_dt = date(2022, 9, 1)
 
 start_dt = datetime.combine(start_dt, datetime.min.time())
 end_dt = datetime.combine(end_dt, datetime.max.time())
 
-print(start_dt)
+print("start_dt", start_dt)
 
 low_dt = time_to_s_timestamp(start_dt)
-high_dt = time_to_s_timestamp(end_dt)
+high_dt = time_to_s_timestamp(end_dt) - max_steps
 
-dt = np.random.randint(low = low_dt, high = high_dt, size=1)
+sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
+sample_end = sample_start + max_steps
 
-print(dt)
+start_dt = time_to_datetime(sample_start)
+end_dt = time_to_datetime(sample_end)
+
+
+print("start_dt", start_dt.date())
+print("end_dt", end_dt)

@@ -70,7 +70,7 @@ class MongoDAO:
         )
         return collection
 
-    def load_bar_data(self, instrument_id: str, start: date, end: date, interval: Interval) -> pd.DataFrame:
+    def load_bar_data(self, instrument_id: str, start: date, end: date, interval: Interval, limit: int = 0) -> pd.DataFrame:
         collection = self.db['bar_' + interval.value]
         cursor = collection.find(
             {
@@ -83,7 +83,7 @@ class MongoDAO:
             {
                 "_id": 0,
             },
-        ).sort('datetime', 1)
+        ).sort('datetime', 1).limit(limit)
         df = pd.DataFrame(list(cursor))
         df['datetime'] = pd.to_datetime(df['datetime'])
         return df

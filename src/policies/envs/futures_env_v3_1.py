@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 import numpy as np
 from copy import deepcopy
 
@@ -18,7 +19,6 @@ from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
 from utils import Interval
-
 
 class FuturesEnvV3_1(gym.Env):
     """
@@ -49,15 +49,12 @@ class FuturesEnvV3_1(gym.Env):
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
-        print("env: Setting config")
+        logging.INFO("env: Setting config")
+        # data config
         self.is_offline = config.is_offline
         self.is_random_sample = config.is_random_sample
         self.dataloader = DataLoader(config)
         self.symbol = get_symbols_by_names(config)[0]
-        if self.is_offline:
-            self._set_offline_data()
-        else:
-            self._set_api_data()
 
         # Trading config
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
@@ -67,6 +64,10 @@ class FuturesEnvV3_1(gym.Env):
         self.data_length = config.data_length  # data length for observation
         self.interval_1: str = Interval.ONE_SEC.value  # interval name
         self.bar_length: int = 1000  # subscribed bar length
+        if self.is_offline:
+            self._set_offline_data()
+        else:
+            self._set_api_data()
 
         # RL config
         self.max_steps = config.max_steps
@@ -86,7 +87,7 @@ class FuturesEnvV3_1(gym.Env):
     def _set_offline_data(self):
         # get offline data from db
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
-            interval=Interval.ONE_SEC, instrument_id=self.symbol)
+            interval=Interval.ONE_SEC, instrument_id=self.symbol, offset_bar_length=self.bar_length)
         self.overall_steps = 0
 
     def _set_api_data(self):
@@ -109,7 +110,7 @@ class FuturesEnvV3_1(gym.Env):
             self.api.wait_update()
             # update quote subscriptions when underlying_symbol changes
             if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
-                print("env: Updating subscription")
+                logging.INFO("env: Updating subscription")
                 self.underlying_symbol = self.instrument_quote.underlying_symbol
                 if self.target_pos_task is not None:
                     self._set_target_volume(0)
@@ -160,7 +161,7 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        print("env: Resetting")
+        logging.INFO("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_volume = 0  # last target position volume
@@ -177,25 +178,25 @@ class FuturesEnvV3_1(gym.Env):
 
     def step(self, action):
         try:
-            print(action)
             assert self.action_space.contains(action)
             action = action[0]
-            self._set_target_volume(action)
-            state = self._get_state()
-            self.reward = self._reward_function()
-            self.last_volume = action
-            self.steps += 1
-            self._update_subscription()
-
-            self.log_info()
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
-                    wandb.log(
-                        {"training_info/accumulated_reward": self.accumulated_reward})
+                    wandb.log({"training_info/accumulated_reward": self.accumulated_reward})
+                self._set_target_volume(0)
+                self.last_volume = 0
+            else:
+                self._set_target_volume(action)
+                self.last_volume = action
+            state = self._get_state()
+            self.reward = self._reward_function()
+            self.steps += 1
+            self._update_subscription()
+            self.log_info()
             return state, self.reward, self.done, self.info
         except Exception as e:
-            print("env: Error in step, resetting position to 0")
+            logging.INFO("env: Error in step, resetting position to 0")
             self._set_target_volume(0)
             raise e
 

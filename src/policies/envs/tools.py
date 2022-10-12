@@ -1,4 +1,5 @@
 from typing import Dict, List
+import logging
 from datetime import datetime
 from collections import defaultdict, deque
 import numpy as np
@@ -9,7 +10,7 @@ from .constant import EnvConfig
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
-from tqsdk.tafunc import time_to_datetime
+from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 from commodity import Commodity
 from .constant import EnvConfig
 
@@ -99,18 +100,32 @@ class DataLoader:
         self.config = config
         self.is_random_sample = config.is_random_sample
 
+        self.start_dt = self.config.start_dt
+        self.end_dt = self.config.end_dt
+        self.mongo = MongoDAO()
+
     def get_api(self) -> TqApi:
         return self._set_account(
             self.config.auth, self.config.backtest, self.config.init_balance)
 
-    def get_offline_data(self, interval: Interval, instrument_id: str) -> pd.DataFrame:
-        print("dataloader: Loading offline data...")
+    def get_offline_data(self, interval: Interval, instrument_id: str, offset_bar_length: int) -> pd.DataFrame:
         if self.is_random_sample:
-            pass
+            offset = self.config.max_steps + offset_bar_length + 100
+            start_dt = datetime.combine(self.start_dt, datetime.min.time())
+            end_dt = datetime.combine(self.end_dt, datetime.max.time())
+
+            low_dt = time_to_s_timestamp(start_dt)
+            high_dt = time_to_s_timestamp(end_dt) - offset
+
+            sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
+            sample_start_dt = time_to_datetime(sample_start).date()
+            logging.INFO("dataloader: Loading random offline data from ", sample_start_dt)
+            df = self.mongo.load_bar_data(
+                instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
+            logging.INFO("dataloader: random offline data loaded, shape: ", df.shape)
+            return df
         else:
-            self.mongo = MongoDAO()
-            self.start_dt = self.config.start_dt
-            self.end_dt = self.config.end_dt
+            logging.INFO("dataloader: Loading offline data...")
             df = self.mongo.load_bar_data(
                 instrument_id, self.start_dt, self.end_dt, interval)
             return df
@@ -125,18 +140,18 @@ class DataLoader:
         api = None
         if backtest is not None:
             # backtest
-            print("Backtest mode")
+            logging.INFO("Backtest mode")
             api: TqApi = TqApi(auth=auth, account=TqSim(init_balance=init_balance), 
                 backtest=backtest,
             )
         else:
             # live or sim
             if live_market:
-                print("Live market mode")
+                logging.INFO("Live market mode")
                 api = TqApi(
                     account=live_account, auth=auth)
             else:
-                print("Sim mode")
+                logging.INFO("Sim mode")
                 api = TqApi(auth=auth, account=TqSim(
                     init_balance=init_balance))
         return api
