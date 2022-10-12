@@ -49,7 +49,7 @@ class FuturesEnvV3_1(gym.Env):
 
     def _set_config(self, config: EnvConfig):
         # Subscribe instrument quote
-        logging.info("env: Setting config")
+        print("env: Setting config")
         # data config
         self.is_offline = config.is_offline
         self.is_random_sample = config.is_random_sample
@@ -62,7 +62,7 @@ class FuturesEnvV3_1(gym.Env):
         self.factor_length = 50
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.interval_1: str = Interval.ONE_SEC.value  # interval name
+        self.interval_name_1: str = Interval.ONE_SEC.value  # interval name
         self.bar_length: int = 1000  # subscribed bar length
         if self.is_offline:
             self._set_offline_data()
@@ -79,7 +79,7 @@ class FuturesEnvV3_1(gym.Env):
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             # "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
             # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
-            self.interval_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_1], 5), dtype=np.float64),
+            self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
         })
@@ -110,7 +110,7 @@ class FuturesEnvV3_1(gym.Env):
             self.api.wait_update()
             # update quote subscriptions when underlying_symbol changes
             if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
-                logging.info("env: Updating subscription")
+                print("env: Updating subscription")
                 self.underlying_symbol = self.instrument_quote.underlying_symbol
                 if self.target_pos_task is not None:
                     self._set_target_volume(0)
@@ -133,14 +133,13 @@ class FuturesEnvV3_1(gym.Env):
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
             self.overall_steps += 1
 
-            state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(dtype=np.float64)
+            state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_name_1]:].to_numpy(dtype=np.float64)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(
+                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_name_1]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.last_datatime = self.instrument_quote.datetime
@@ -148,12 +147,14 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
+        self.rsi = np.array(self.factors.rsi(self.bar_1[-self.factor_length:], n=30)[-self.factor_length:], dtype=np.float64)
+        self.macd_bar = np.array(self.factors.macd_bar(self.bar_1.iloc[-self.factor_length:], short=60, long=120, m=30), dtype=np.float64)
         state = dict({
             # "last_volume": np.array([self.last_volume], dtype=np.int64),
             "last_price": np.array([self.last_price], dtype=np.float64),
-            self.interval_1: state_1,
-            "rsi": np.array(self.factors.rsi(self.bar_1[-self.factor_length:], n=30)[-self.factor_length:], dtype=np.float64),
-            "macd_bar": np.array(self.factors.macd_bar(self.bar_1.iloc[-self.factor_length:], short=60, long=120, m=30), dtype=np.float64),
+            self.interval_name_1: state_1,
+            "rsi": self.rsi,
+            "macd_bar": self.macd_bar
         })
         return state
 
@@ -161,7 +162,7 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        logging.info("env: Resetting")
+        print("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_volume = 0  # last target position volume
@@ -196,7 +197,7 @@ class FuturesEnvV3_1(gym.Env):
             self.log_info()
             return state, self.reward, self.done, self.info
         except Exception as e:
-            logging.info("env: Error in step, resetting position to 0")
+            print("env: Error in step, resetting position to 0")
             self._set_target_volume(0)
             raise e
 
@@ -207,6 +208,8 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_volume": self.last_volume,
                 "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
+                "training_info/rsi": self.rsi[-1],
+                "training_info/macd_bar": self.macd_bar[-1],
             }
         else:
             self.info = {

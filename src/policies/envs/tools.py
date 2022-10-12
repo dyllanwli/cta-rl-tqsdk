@@ -45,7 +45,7 @@ class TargetPosTaskOffline:
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
-            logging.basicConfig(level=logging.INFO)
+            logging.basicConfig(level=print)
     
     def insert_order(self,):
         # TODO insert order
@@ -119,13 +119,13 @@ class DataLoader:
 
             sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
             sample_start_dt = time_to_datetime(sample_start).date()
-            logging.info("dataloader: Loading random offline data from ", sample_start_dt)
+            print("dataloader: Loading random offline data from ", sample_start_dt)
             df = self.mongo.load_bar_data(
                 instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
-            logging.info("dataloader: random offline data loaded, shape: ", df.shape)
+            print("dataloader: random offline data loaded, shape: ", df.shape)
             return df
         else:
-            logging.info("dataloader: Loading offline data...")
+            print("dataloader: Loading offline data...")
             df = self.mongo.load_bar_data(
                 instrument_id, self.start_dt, self.end_dt, interval)
             return df
@@ -140,18 +140,18 @@ class DataLoader:
         api = None
         if backtest is not None:
             # backtest
-            logging.info("Backtest mode")
+            print("Backtest mode")
             api: TqApi = TqApi(auth=auth, account=TqSim(init_balance=init_balance), 
                 backtest=backtest,
             )
         else:
             # live or sim
             if live_market:
-                logging.info("Live market mode")
+                print("Live market mode")
                 api = TqApi(
                     account=live_account, auth=auth)
             else:
-                logging.info("Sim mode")
+                print("Sim mode")
                 api = TqApi(auth=auth, account=TqSim(
                     init_balance=init_balance))
         return api
