@@ -69,7 +69,7 @@ class FuturesEnvV3_1(gym.Env):
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
         self.factor_length = 50
-        self.target_pos_task:  TargetPosTaskOffline = TargetPosTaskOffline() if self.offline else None
+        self.target_pos_task = TargetPosTaskOffline() if self.offline else None
         self.data_length = config.data_length # data length for observation
         self.interval_1: str = Interval.ONE_SEC.value # interval name
         self.bar_length: int = 1000 # subscribed bar length
@@ -88,6 +88,7 @@ class FuturesEnvV3_1(gym.Env):
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
         })
+
     def _set_target_volume(self, volume: int):
         if self.offline:
             self.profit = self.target_pos_task.set_target_volume(volume, self.last_price)
@@ -105,7 +106,6 @@ class FuturesEnvV3_1(gym.Env):
                 if self.target_pos_task is not None:
                     self._set_target_volume(0)
                 self.target_pos_task = TargetPosTask(self.api, self.underlying_symbol, offset_priority="昨今开")
-
 
                 self.bar_1 = self.api.get_kline_serial(
                     self.underlying_symbol, 1, data_length=self.bar_length)
@@ -173,7 +173,6 @@ class FuturesEnvV3_1(gym.Env):
             self.reward = self._reward_function()
             self.last_volume = action
             self.steps += 1
- 
             self._update_subscription()
 
             self.log_info()
@@ -188,28 +187,36 @@ class FuturesEnvV3_1(gym.Env):
             raise e
 
     def log_info(self,):
-        self.info = {
-            # "pre_balance": self.account.pre_balance,
-            # "static_balance": self.account.static_balance,
-            # "balance": self.account.balance,
-            # "available": self.account.available,
-            # "float_profit": self.account.float_profit,
-            # "position_profit": self.account.position_profit,
-            # "close_profit": self.account.close_profit,
-            # "frozen_margin": self.account.frozen_margin,
-            # "margin": self.account.margin,
-            # "frozen_commission": self.account.frozen_commission,
-            # "commission": self.account.commission,
-            # "frozen_premium": self.account.frozen_premium,
-            # "premium": self.account.premium,
-            # "risk_ratio": self.account.risk_ratio,
-            # "market_value": self.account.market_value,
-            "training_info/time": time_to_s_timestamp(self.last_datatime),
-            # "commision_change": self.account.commission - self.last_commision,
-            "training_info/last_volume": self.last_volume,
-            "training_info/profit": self.profit,
-            "training_info/last_price": self.last_price,
-        }
+        if self.offline: 
+            self.info = {
+                "training_info/time": time_to_s_timestamp(self.last_datatime),
+                "training_info/last_volume": self.last_volume,
+                "training_info/profit": self.profit,
+                "training_info/last_price": self.last_price,
+            }
+        else:
+            self.info = {
+                "backtest_info/pre_balance": self.account.pre_balance,
+                "backtest_info/static_balance": self.account.static_balance,
+                "backtest_info/balance": self.account.balance,
+                "backtest_info/available": self.account.available,
+                "backtest_info/float_profit": self.account.float_profit,
+                "backtest_info/position_profit": self.account.position_profit,
+                "backtest_info/close_profit": self.account.close_profit,
+                # "frozen_margin": self.account.frozen_margin,
+                # "margin": self.account.margin,
+                # "frozen_commission": self.account.frozen_commission,
+                "backtest_info/commission": self.account.commission,
+                # "frozen_premium": self.account.frozen_premium,
+                # "premium": self.account.premium,
+                "backtest_info/risk_ratio": self.account.risk_ratio,
+                # "market_value": self.account.market_value,
+                "backtest_info/time": time_to_s_timestamp(self.last_datatime),
+                "backtest_info/commision_change": self.account.commission - self.last_commision,
+                "backtest_info/last_volume": self.last_volume,
+                "backtest_info/profit": self.profit,
+                "backtest_info/last_price": self.instrument_quote.last_price,
+            }
         # self.last_commision = self.account.commission
         if self.wandb:
             wandb.log(self.info)

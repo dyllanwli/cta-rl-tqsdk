@@ -21,7 +21,7 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a3", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type
