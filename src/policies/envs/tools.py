@@ -41,7 +41,7 @@ class TargetPosTaskOffline:
         self.last_volume = 0
         self.positions = deque([])
         self.commission = commission
-        self.margin_rate = 2.0
+        self.margin_rate = 4.0
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:

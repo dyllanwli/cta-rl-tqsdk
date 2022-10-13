@@ -87,7 +87,7 @@ class FuturesEnvV3_1(gym.Env):
             # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
             self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
-            "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
+            "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
         })
 
@@ -156,17 +156,18 @@ class FuturesEnvV3_1(gym.Env):
                     else:
                         break
         offset = 50
-        self.rsi = np.array(self.factors.rsi(
-            self.bar_1.iloc[-self.factor_length+offset:], n=7), dtype=np.float64)
+        factor_input = self.bar_1.iloc[-self.factor_length+offset:]
+        self.bias = np.array(self.factors.bias(
+            factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            self.bar_1.iloc[-self.factor_length+offset:], short=60, long=120, m=30), dtype=np.float64)
+            factor_input, short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
-            self.bar_1.iloc[-self.factor_length+offset:], n=26, p=5), dtype=np.float64)
+            factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
             # "last_volume": np.array([self.last_volume], dtype=np.int64),
             "last_price": np.array([self.last_price], dtype=np.float64),
             self.interval_name_1: state_1,
-            "rsi": self.rsi,
+            "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],
             "boll": self.boll,
         })
@@ -188,7 +189,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.is_random_sample:
             self._set_offline_data()
         state = self._get_state()
-        self.log_info()
+        # self.log_info()
         return state
 
     def step(self, action):
@@ -226,10 +227,10 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_volume": self.last_volume,
                 "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
-                "training_info/rsi": self.rsi[-1],
-                "training_info/macd_bar": self.macd_bar[-1],
-                "training_info/boll_top": self.boll[0],
-                "training_info/boll_bottom": self.boll[1],
+                # "training_info/bias": self.bias[0],
+                # "training_info/macd_bar": self.macd_bar[-1],
+                # "training_info/boll_top": self.boll[0],
+                # "training_info/boll_bottom": self.boll[1],
             }
         else:
             self.info = {

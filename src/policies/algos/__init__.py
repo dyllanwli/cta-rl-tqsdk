@@ -2,6 +2,7 @@ from .ppo import PPOConfig
 from .a3c import A3CConfig
 from .a2c import A2CConfig
 from .sac import SACConfig
+from .r2d2 import R2D2Config
 import gym
 
 from ray.rllib.algorithms.algorithm import Algorithm
@@ -17,6 +18,8 @@ class Algos:
             self.algo = A2CConfig(env=env, env_config=env_config)
         elif name == "SAC":
             self.algo = SACConfig(env=env, env_config=env_config)
+        elif name == "R2D2":
+            self.algo = R2D2Config(env=env, env_config=env_config)
         else:
             raise ValueError("Not found")
 

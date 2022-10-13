@@ -26,7 +26,7 @@ class A3CConfig:
             "rollout_fragment_length": 50,
             "min_time_s_per_iteration": 50,
             "model": {
-                "fcnet_hiddens": [256, 256],
+                "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
                 "max_seq_len": 50,

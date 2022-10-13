@@ -50,7 +50,7 @@ class EnvConfig:
             Interval.ONE_DAY.value: 5,
         }
 
-        self.action_space_type = "discrete" # "discrete" or "continuous"
+        self.action_space_type = "continuous" # "discrete" or "continuous"
 
     @property
     def backtest(self) -> TqBacktest:

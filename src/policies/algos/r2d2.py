@@ -21,8 +21,8 @@ class R2D2Config:
             "h_function_epsilon": 1e-3,
             # DQN overrides
             "adam_epsilon": 1e-3,
-            "lr": 1e-4,
-            "gamma": 0.5,
+            "lr": 1e-5,
+            "gamma": 0.4,
             "train_batch_size": 1024,
             "target_network_update_freq": 1000,
             "training_intensity": 150,
@@ -31,14 +31,13 @@ class R2D2Config:
                 "type": "MultiAgentReplayBuffer",
                 "capacity": 100000,
                 "storage_unit": "sequences",
-                "replay_sequence_length": -1,
                 "replay_burn_in": 20,
             },
             "model": {
-                "fcnet_hiddens": [256, 256],
+                "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
-                "use_lstm": False, # use LSTM or use attention
-                "max_seq_len": 50,
+                "use_lstm": True, # use LSTM or use attention
+                "max_seq_len": 100,
                 "lstm_cell_size": 256,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,

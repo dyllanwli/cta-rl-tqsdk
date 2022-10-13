@@ -20,3 +20,7 @@ class Factors:
         boll_top = boll["top"].iloc[-1]
         boll_bottom = boll["bottom"].iloc[-1]
         return [boll_top, boll_bottom]
+    
+    def bias(self, df: pd.DataFrame, n: int = 6):
+        bias = BIAS(df, n)["bias"].iloc[-1]
+        return [bias]
