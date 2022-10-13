@@ -31,7 +31,7 @@ class SACConfig:
                 "post_fcnet_hiddens": [],
                 "post_fcnet_activation": None,
             },
-            "clip_actions": True,
+            "clip_actions": False,
             "tau": 0.005,
             "initial_alpha": 0.5,
             "target_entropy": "auto",

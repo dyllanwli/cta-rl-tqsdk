@@ -10,7 +10,8 @@ class Factors:
         macd = MACD(df, short, long, m)
         return list(macd["bar"])
 
-    def rsi(self, df: pd.DataFrame, n: int = 60):
+    def rsi(self, df: pd.DataFrame, n: int = 20):
+        print(df)
+        df.to_csv('test.csv')
         rsi = RSI(df, n)
-        rsi.fillna(50.0, inplace=True)
         return list(rsi["rsi"])

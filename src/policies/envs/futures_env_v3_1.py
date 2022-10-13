@@ -151,7 +151,7 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        self.rsi = np.array(self.factors.rsi(self.bar_1[-self.factor_length:], n=30)[-self.factor_length:], dtype=np.float64)
+        self.rsi = np.array(self.factors.rsi(self.bar_1[-self.factor_length:], n=20)[-self.factor_length:], dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(self.bar_1.iloc[-self.factor_length:], short=60, long=120, m=30), dtype=np.float64)
         state = dict({
             # "last_volume": np.array([self.last_volume], dtype=np.int64),
@@ -188,7 +188,6 @@ class FuturesEnvV3_1(gym.Env):
                 action = int(action) - 10
             else:
                 action = int(action[0]) - 10
-                
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
