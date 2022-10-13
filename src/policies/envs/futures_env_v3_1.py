@@ -83,8 +83,7 @@ class FuturesEnvV3_1(gym.Env):
 
         self.observation_space: spaces.Dict = spaces.Dict({
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            # "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
-            # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
+            "datetime": spaces.Box(low=0, high = 60, shape=(3,), dtype=np.int64),        
             self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
@@ -157,6 +156,7 @@ class FuturesEnvV3_1(gym.Env):
                         break
         offset = 50
         factor_input = self.bar_1.iloc[-self.factor_length+offset:]
+        datetime_state = time_to_datetime(self.last_datatime)
         self.bias = np.array(self.factors.bias(
             factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
@@ -164,8 +164,8 @@ class FuturesEnvV3_1(gym.Env):
         self.boll = np.array(self.factors.boll(
             factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
-            # "last_volume": np.array([self.last_volume], dtype=np.int64),
             "last_price": np.array([self.last_price], dtype=np.float64),
+            "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
             self.interval_name_1: state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],

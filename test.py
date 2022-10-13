@@ -31,11 +31,6 @@ from gym import spaces
 
 # if observation.contains(state):
 #     print("yes")
-from tqsdk.ta import MACD, RSI
+month = spaces.Box(low=1, high=12, shape=(1,), dtype=np.int64)
 
-df = pd.read_csv('test.csv').iloc[:, 1:]
-print(df['close'])
-print(df.shape)
-
-rsi = RSI(df, 10)
-print(list(rsi['rsi']))
+assert month.contains(np.array([0]))

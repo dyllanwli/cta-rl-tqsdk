@@ -16,7 +16,7 @@ class EnvConfig:
                  live_market: bool = False,
                  live_account: TqAccount = None,
                  wandb = None,
-                 max_steps: int = 12000,  # max actions per episode
+                 max_steps: int = 13500,  # max actions per episode
                  is_offline: bool = False,
                  is_random_sample: bool = False,
                  ):
@@ -50,7 +50,7 @@ class EnvConfig:
             Interval.ONE_DAY.value: 5,
         }
 
-        self.action_space_type = "continuous" # "discrete" or "continuous"
+        self.action_space_type = "discrete" # "discrete" or "continuous"
 
     @property
     def backtest(self) -> TqBacktest:

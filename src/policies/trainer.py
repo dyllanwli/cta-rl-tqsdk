@@ -19,7 +19,7 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type # tune or train
@@ -48,8 +48,8 @@ class RLTrainer:
         if self.train_type == "tune":
             # use tuner
             stop = {
-                "training_iteration": 1000000,
-                "episode_reward_mean": 1000,
+                "training_iteration": 10000,
+                "episode_reward_mean": 100,
             }
             cb = [WandbLoggerCallback(
                 project="futures-trading-2",

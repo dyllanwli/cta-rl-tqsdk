@@ -1,5 +1,7 @@
 from ray.rllib.algorithms import r2d2
 import gym
+from ray import tune
+
 
 class R2D2Config:
 
@@ -9,20 +11,20 @@ class R2D2Config:
             # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": 1,
+            "num_workers": 5,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
             "num_gpus": 1,
             "framework": "tf",
             "horizon": 1000000,  # horizon need to be set
-            # R2D2 config
+            # R2D2 confi
             "zero_init_states": True,
             "use_h_function": True,
             "h_function_epsilon": 1e-3,
             # DQN overrides
             "adam_epsilon": 1e-3,
             "lr": 1e-5,
-            "gamma": 0.4,
+            "gamma": tune.grid_search([0.5, 0.95]),
             "train_batch_size": 1024,
             "target_network_update_freq": 1000,
             "training_intensity": 150,
@@ -37,8 +39,8 @@ class R2D2Config:
                 "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": 100,
-                "lstm_cell_size": 256,
+                "max_seq_len": tune.grid_search([20, 40, 60]),
+                "lstm_cell_size": tune.grid_search([256, 512]),
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,
                 "_time_major": True,
