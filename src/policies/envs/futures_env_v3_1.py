@@ -157,7 +157,7 @@ class FuturesEnvV3_1(gym.Env):
                         break
         offset = 50
         self.rsi = np.array(self.factors.rsi(
-            self.bar_1[-self.factor_length+offset:], n=7), dtype=np.float64)
+            self.bar_1.iloc[-self.factor_length+offset:], n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
             self.bar_1.iloc[-self.factor_length+offset:], short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
@@ -228,6 +228,8 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_price": self.last_price,
                 "training_info/rsi": self.rsi[-1],
                 "training_info/macd_bar": self.macd_bar[-1],
+                "training_info/boll_top": self.boll[0],
+                "training_info/boll_bottom": self.boll[1],
             }
         else:
             self.info = {

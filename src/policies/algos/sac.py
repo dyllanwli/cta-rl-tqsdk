@@ -10,11 +10,11 @@ class SACConfig:
             # basic config
             "env": env,
             "env_config": env_config,
-            "num_workers": 2,
+            "num_workers": 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 10,
             "num_gpus": 1,
-            "framework": "torch",
+            "framework": "tf",
             "horizon": 1000000,  # horizon need to be set
             # SAC config
             "twin_q": True,
@@ -42,7 +42,7 @@ class SACConfig:
                 # How many steps of the model to sample before learning starts.
                 "learning_starts": 1500,
                 # If True prioritized replay buffer will be used.
-                "prioritized_replay": False,
+                "prioritized_replay": True,
                 "prioritized_replay_alpha": 0.6,
                 "prioritized_replay_beta": 0.4,
                 "prioritized_replay_eps": 1e-6,
