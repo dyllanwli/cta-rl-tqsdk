@@ -15,7 +15,7 @@ class SACConfig:
             # "num_cpus_per_worker": 10,
             "num_gpus": 1,
             "framework": "tf",
-            "horizon": 1000000,  # horizon need to be set
+            "horizon": 14400,  # horizon need to be set
             # SAC config
             "twin_q": True,
             "q_model_config": {

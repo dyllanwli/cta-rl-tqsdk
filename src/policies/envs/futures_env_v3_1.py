@@ -127,8 +127,9 @@ class FuturesEnvV3_1(gym.Env):
 
     def _reward_function(self):
         # Reward is the profit of the last action
+        # set reward bound to [-1, 1]
         self.accumulated_reward += self.profit
-        return self.profit
+        return np.tanh(self.profit)
 
     def _get_state(self):
         if self.is_offline:

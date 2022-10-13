@@ -23,7 +23,7 @@ class RLTrainer:
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type # tune or train
-        self.algo_name = "R2D2"
+        self.algo_name = "PPO"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
@@ -48,8 +48,8 @@ class RLTrainer:
         if self.train_type == "tune":
             # use tuner
             stop = {
-                "training_iteration": 10000,
-                "episode_reward_mean": 100,
+                "training_iteration": 1000,
+                "episode_reward_mean": 1,
             }
             cb = [WandbLoggerCallback(
                 project="futures-trading-2",

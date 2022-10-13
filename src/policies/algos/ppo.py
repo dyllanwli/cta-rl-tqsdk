@@ -1,5 +1,6 @@
 from ray.rllib.algorithms import ppo
 import gym
+from ray import tune
 
 class PPOConfig:
 
@@ -8,15 +9,15 @@ class PPOConfig:
         self.config = {
             "env": env,
             "env_config": env_config,
-            "num_workers": 1,
+            "num_workers": 5,
             "num_envs_per_worker": 1,
-            "num_cpus_per_worker": 20,
+            # "num_cpus_per_worker": 20,
             "num_gpus": 1,
             "framework": "tf",
-            "horizon": 1000000,  # horizon need to be set
+            "horizon": 14400,  # horizon need to be set
             "use_gae": True,
             "clip_param": 0.3,
-            "lambda": 0.999,
+            "lambda": tune.grid_search([0.4, 0.5, 0.99]),
             "sgd_minibatch_size": 128,
             "lr": 0.00001,
             "lr_schedule": [[0, 0.00001], [1000, 0.000005]],

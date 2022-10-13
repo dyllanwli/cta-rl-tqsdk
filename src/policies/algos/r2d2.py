@@ -13,10 +13,10 @@ class R2D2Config:
             "env_config": env_config,
             "num_workers": 5,
             "num_envs_per_worker": 1,
-            # "num_cpus_per_worker": 20,
-            "num_gpus": 1,
+            "num_cpus_per_worker": 5,
+            "num_gpus": 0,
             "framework": "tf",
-            "horizon": 1000000,  # horizon need to be set
+            "horizon": 14400,  # horizon need to be set
             # R2D2 confi
             "zero_init_states": True,
             "use_h_function": True,

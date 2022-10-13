@@ -14,7 +14,7 @@ class A3CConfig:
             # "num_cpus_per_worker": 20,
             "num_gpus": 1,
             "framework": "tf",
-            "horizon": 1000000,  # horizon need to be set
+            "horizon": 14400,  # horizon need to be set
             # A3C config
             "use_critic": True,
             "use_gae": True,

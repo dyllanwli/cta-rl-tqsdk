@@ -41,7 +41,7 @@ class TargetPosTaskOffline:
         self.last_volume = 0
         self.positions = deque([])
         self.commission = commission
-        self.margin_rate = 4.0
+        self.margin_rate = 3.0
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -119,10 +119,10 @@ class DataLoader:
 
             sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
             sample_start_dt = time_to_datetime(sample_start).date()
-            print("dataloader: Loading random offline data from ", sample_start_dt)
+            # print("dataloader: Loading random offline data from ", sample_start_dt)
             df = self.mongo.load_bar_data(
                 instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
-            print("dataloader: random offline data loaded, shape: ", df.shape)
+            # print("dataloader: random offline data loaded, shape: ", df.shape)
             return df
         else:
             print("dataloader: Loading offline data...")

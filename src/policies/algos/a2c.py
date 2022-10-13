@@ -14,7 +14,7 @@ class A2CConfig:
             "num_cpus_per_worker": 20,
             "num_gpus": 1,
             "framework": "tf",
-            "horizon": 1000000,  # horizon need to be set
+            "horizon": 14400,  # horizon need to be set
             "train_batch_size": 200, # shoule be >= rollout_fragment_length
             # A2C config
             "microbatch_size": 200,
