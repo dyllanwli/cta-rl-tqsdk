@@ -31,55 +31,11 @@ from gym import spaces
 
 # if observation.contains(state):
 #     print("yes")
+from tqsdk.ta import MACD, RSI
 
-# if action_space.contains(np.array([[-20]])):
-#     print("yes")
-class TargetPosTaskOffline:
-    def __init__(self, commission: float = 1.0):
-        self.last_volume = 0
-        self.positions = deque([])
-        self.commission = commission
-        self.margin_rate = 1.0
+df = pd.read_csv('test.csv').iloc[:, 1:]
+print(df['close'])
+print(df.shape)
 
-    def set_target_volume(self, volume, price: float):
-        profit = 0
-        if self.last_volume == volume:
-            return
-        if volume * self.last_volume > 0:
-            position_change = volume - self.last_volume
-            sign = 1 if volume > 0 else -1
-            if position_change > 0:
-                print("buy", position_change)
-                for _ in range(position_change):
-                    self.positions.append(price)
-            else:
-                print("sell", position_change)
-                for _ in range(-position_change):
-                    profit += sign * (price - self.positions.popleft()) * self.margin_rate - self.commission
-        else:
-            if volume >= 0:
-                print("sell short", self.last_volume)
-                for _ in range(-self.last_volume):
-                    profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
-                print("buy long", volume)
-                for _ in range(volume):
-                    self.positions.append(price)
-            else:
-                print("sell long", self.last_volume)
-                for _ in range(self.last_volume):
-                    profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
-                print("buy short", volume)
-                for _ in range(-volume):
-                    self.positions.append(price)
-        self.last_volume = volume
-        return profit
-
-# target_pos_task = TargetPosTaskOffline()
-
-max_action = 10
-action_space: spaces.Box = spaces.Box(
-                low=0, high=max_action*2+1, shape=(1,), dtype=np.int64)
-
-
-print(action_space.sample())
-print(action_space.contains([0]))
+rsi = RSI(df, 10)
+print(list(rsi['rsi']))

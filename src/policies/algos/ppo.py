@@ -2,7 +2,6 @@ from ray.rllib.algorithms import ppo
 import gym
 
 class PPOConfig:
-    """PPO config for futures trading."""
 
     def __init__(self, env: gym.Env, env_config):
         self.env = env

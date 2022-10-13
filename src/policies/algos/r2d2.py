@@ -1,7 +1,7 @@
-from ray.rllib.algorithms import a3c
+from ray.rllib.algorithms import r2d2
 import gym
 
-class A3CConfig:
+class R2D2Config:
 
     def __init__(self, env: gym.Env, env_config):
         self.env = env
@@ -15,20 +15,29 @@ class A3CConfig:
             "num_gpus": 1,
             "framework": "tf",
             "horizon": 1000000,  # horizon need to be set
-            # A3C config
-            "use_critic": True,
-            "use_gae": True,
-            "lambda": 0.4,
-            "grad_clip": 40.0,
-            "lr": 0.00001,
-            "lr_schedule": [[0, 0.00001], [1000, 0.000005]],
-            "vf_loss_coeff": 0.5,
-            "rollout_fragment_length": 50,
-            "min_time_s_per_iteration": 50,
+            # R2D2 config
+            "zero_init_states": True,
+            "use_h_function": True,
+            "h_function_epsilon": 1e-3,
+            # DQN overrides
+            "adam_epsilon": 1e-3,
+            "lr": 1e-4,
+            "gamma": 0.5,
+            "train_batch_size": 1024,
+            "target_network_update_freq": 1000,
+            "training_intensity": 150,
+            # R2D2 is using a buffer that stores sequences.
+            "replay_buffer_config": {
+                "type": "MultiAgentReplayBuffer",
+                "capacity": 100000,
+                "storage_unit": "sequences",
+                "replay_sequence_length": -1,
+                "replay_burn_in": 20,
+            },
             "model": {
                 "fcnet_hiddens": [256, 256],
                 "fcnet_activation": "relu",
-                "use_lstm": True, # use LSTM or use attention
+                "use_lstm": False, # use LSTM or use attention
                 "max_seq_len": 50,
                 "lstm_cell_size": 256,
                 "lstm_use_prev_action": True,
@@ -46,7 +55,7 @@ class A3CConfig:
             },
         }
     
-    def trainer(self) -> a3c.A3C:
-        config = a3c.DEFAULT_CONFIG.copy()
+    def trainer(self) -> r2d2.R2D2:
+        config = r2d2.R2D2_DEFAULT_CONFIG.copy()
         config.update(self.config)
-        return a3c.A3C(env=self.env, config=config)
+        return r2d2.R2D2(env=self.env, config=config)

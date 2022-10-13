@@ -20,6 +20,7 @@ from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
 from utils import Interval
 
+
 class FuturesEnvV3_1(gym.Env):
     """
     Custom Environment for RL training
@@ -40,7 +41,8 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading-2", name=self.wandb, group="train")
+            wandb.init(project="futures-trading-2",
+                       name=self.wandb, group="train")
 
         self._skip_env_checking = True
         self._set_config(config)
@@ -85,7 +87,8 @@ class FuturesEnvV3_1(gym.Env):
             # "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
             self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
-            "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length,), dtype=np.float64),
+            "rsi": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
+            "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
         })
 
     def _set_offline_data(self):
@@ -98,7 +101,7 @@ class FuturesEnvV3_1(gym.Env):
         self.api: TqApi = self.dataloader.get_api()
         self.account = self.api.get_account()
         self.balance = deepcopy(self.account.balance)
-        self.instrument_quote = self.api.get_quote(self.symbol) 
+        self.instrument_quote = self.api.get_quote(self.symbol)
         self.underlying_symbol = self.instrument_quote.underlying_symbol
 
     def _set_target_volume(self, volume: int):
@@ -137,7 +140,8 @@ class FuturesEnvV3_1(gym.Env):
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
             self.overall_steps += 1
 
-            state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_name_1]:].to_numpy(dtype=np.float64)
+            state_1 = self.bar_1[self.OHLCV].iloc[
+                -self.data_length[self.interval_name_1]:].to_numpy(dtype=np.float64)
         else:
             # online state
             while True:
@@ -151,14 +155,20 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        self.rsi = np.array(self.factors.rsi(self.bar_1[-self.factor_length:], n=20)[-self.factor_length:], dtype=np.float64)
-        self.macd_bar = np.array(self.factors.macd_bar(self.bar_1.iloc[-self.factor_length:], short=60, long=120, m=30), dtype=np.float64)
+        offset = 50
+        self.rsi = np.array(self.factors.rsi(
+            self.bar_1[-self.factor_length+offset:], n=7), dtype=np.float64)
+        self.macd_bar = np.array(self.factors.macd_bar(
+            self.bar_1.iloc[-self.factor_length+offset:], short=60, long=120, m=30), dtype=np.float64)
+        self.boll = np.array(self.factors.boll(
+            self.bar_1.iloc[-self.factor_length+offset:], n=26, p=5), dtype=np.float64)
         state = dict({
             # "last_volume": np.array([self.last_volume], dtype=np.int64),
             "last_price": np.array([self.last_price], dtype=np.float64),
             self.interval_name_1: state_1,
             "rsi": self.rsi,
-            "macd_bar": self.macd_bar
+            "macd_bar": self.macd_bar[-self.factor_length:],
+            "boll": self.boll,
         })
         return state
 
@@ -191,7 +201,8 @@ class FuturesEnvV3_1(gym.Env):
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
-                    wandb.log({"training_info/accumulated_reward": self.accumulated_reward})
+                    wandb.log(
+                        {"training_info/accumulated_reward": self.accumulated_reward})
                 self._set_target_volume(0)
                 self.last_volume = 0
             else:

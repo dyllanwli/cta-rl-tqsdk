@@ -2,7 +2,6 @@ from ray.rllib.algorithms import a2c
 import gym
 
 class A2CConfig:
-    """A3C config for futures trading."""
 
     def __init__(self, env: gym.Env, env_config):
         self.env = env

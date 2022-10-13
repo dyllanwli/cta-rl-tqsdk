@@ -3,7 +3,6 @@ import gym
 
 
 class SACConfig:
-    """A3C config for futures trading."""
 
     def __init__(self, env: gym.Env, env_config):
         self.env = env
@@ -11,10 +10,10 @@ class SACConfig:
             # basic config
             "env": env,
             "env_config": env_config,
-            "num_workers": 1,
+            "num_workers": 2,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 10,
-            "num_gpus": 0,
+            "num_gpus": 1,
             "framework": "torch",
             "horizon": 1000000,  # horizon need to be set
             # SAC config
@@ -35,7 +34,7 @@ class SACConfig:
             "tau": 0.005,
             "initial_alpha": 0.5,
             "target_entropy": "auto",
-            "n_step": 1,
+            "n_step": 2,
             "replay_buffer_config": {
                 "_enable_replay_buffer_api": True,
                 "type": "MultiAgentPrioritizedReplayBuffer",
