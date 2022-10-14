@@ -84,7 +84,7 @@ class FuturesEnvV3_1(gym.Env):
         self.observation_space: spaces.Dict = spaces.Dict({
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high = 60, shape=(3,), dtype=np.int64),        
-            self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
+            self.interval_name_1: spaces.Box(low=0, high=1, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),

@@ -44,8 +44,9 @@ def normalize(x):
     elif isinstance(x, pd.DataFrame):
         cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
         for col in cols:
+            print(x[col])
             x[col] = (x[col] - x[col].min()) / (x[col].max() - x[col].min())
-        return x
+            print(x[col])
 
 
 print(normalize(df))
