@@ -22,7 +22,7 @@ class RLTrainer:
     def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
-        self.train_type = train_type # tune or train
+        self.train_type = train_type  # tune or train
         self.algo_name = "IMPALA"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
@@ -35,8 +35,8 @@ class RLTrainer:
             start_dt=date(2016, 1, 1),
             end_dt=date(2021, 3, 1),
             wandb=self.wandb_name,
-            is_offline= True,
-            is_random_sample = True,
+            is_offline=True,
+            is_random_sample=True,
         )}
         self.env = FuturesEnv
 
@@ -49,7 +49,7 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 100,
+                "training_iteration": 1000,
                 "episode_reward_mean": 1,
             }
             cb = [WandbLoggerCallback(
@@ -58,7 +58,7 @@ class RLTrainer:
                 log_config=True,
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
-                               run_config=air.RunConfig(
+                               run_config=air.RunConfig( 
                                    name="futures-trading",
                                    stop=stop,
                                    checkpoint_config=air.CheckpointConfig(

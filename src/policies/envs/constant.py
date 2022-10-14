@@ -16,7 +16,7 @@ class EnvConfig:
                  live_market: bool = False,
                  live_account: TqAccount = None,
                  wandb = None,
-                 max_steps: int = 13500,  # max actions per episode
+                 max_steps: int = 13000,  # max actions per episode
                  is_offline: bool = False,
                  is_random_sample: bool = False,
                  ):

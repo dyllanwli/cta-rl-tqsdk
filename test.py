@@ -31,6 +31,21 @@ from gym import spaces
 
 # if observation.contains(state):
 #     print("yes")
-month = spaces.Box(low=1, high=12, shape=(1,), dtype=np.int64)
 
-assert month.contains(np.array([0]))
+
+df = pd.read_csv("test.csv")
+
+
+def normalize(x):
+    if isinstance(x, np.ndarray):
+        min_val = np.min(x)
+        max_val = np.max(x)
+        return (x - min_val) / (max_val - min_val)
+    elif isinstance(x, pd.DataFrame):
+        cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+        for col in cols:
+            x[col] = (x[col] - x[col].min()) / (x[col].max() - x[col].min())
+        return x
+
+
+print(normalize(df))

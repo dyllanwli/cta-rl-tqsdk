@@ -12,7 +12,11 @@ class Factors:
             max_val = np.max(x)
             return (x - min_val) / (max_val - min_val)
         elif isinstance(x, pd.DataFrame):
-            return (x - x.min()) / (x.max() - x.min())
+            d = x.copy()
+            cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+            for col in cols:
+                d[col] = (d[col] - x[col].min()) / (x[col].max() - x[col].min())
+            return d
 
 
     def macd_bar(self, df: pd.DataFrame, short: int = 30, long: int = 60, m: int = 20):
