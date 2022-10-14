@@ -41,7 +41,7 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading-2",
+            wandb.init(project="futures-trading-3",
                        name=self.wandb, group="train")
 
         self._skip_env_checking = True
@@ -129,7 +129,7 @@ class FuturesEnvV3_1(gym.Env):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1]
         self.accumulated_reward += self.profit
-        return np.tanh(self.profit)
+        return np.tanh(self.profit/100)
 
     def _get_state(self):
         if self.is_offline:
@@ -155,19 +155,26 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = 50
+        offset = 50 # used to avoid the np.NaN in the first 50 bars
         factor_input = self.bar_1.iloc[-self.factor_length+offset:]
+
+        # normalize the data
+        normalized_state_1 = self.factors.normalize(state_1)
+        normalized_factor_input = self.factors.normalize(factor_input)
+
         datetime_state = time_to_datetime(self.last_datatime)
+
+        # calculate factors
         self.bias = np.array(self.factors.bias(
-            factor_input, n=7), dtype=np.float64)
+            normalized_factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            factor_input, short=60, long=120, m=30), dtype=np.float64)
+            normalized_factor_input, short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
-            factor_input, n=26, p=5), dtype=np.float64)
+            normalized_factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
             "last_price": np.array([self.last_price], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            self.interval_name_1: state_1,
+            self.interval_name_1: normalized_state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],
             "boll": self.boll,
@@ -228,10 +235,10 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_volume": self.last_volume,
                 "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
-                # "training_info/bias": self.bias[0],
-                # "training_info/macd_bar": self.macd_bar[-1],
-                # "training_info/boll_top": self.boll[0],
-                # "training_info/boll_bottom": self.boll[1],
+                "training_info/bias": self.bias[0],
+                "training_info/macd_bar": self.macd_bar[-1],
+                "training_info/boll_top": self.boll[0],
+                "training_info/boll_bottom": self.boll[1],
             }
         else:
             self.info = {

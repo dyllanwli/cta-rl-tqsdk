@@ -19,11 +19,11 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "tune"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type # tune or train
-        self.algo_name = "PPO"
+        self.algo_name = "IMPALA"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
@@ -33,7 +33,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2019, 3, 1),
+            end_dt=date(2021, 3, 1),
             wandb=self.wandb_name,
             is_offline= True,
             is_random_sample = True,
@@ -43,16 +43,17 @@ class RLTrainer:
         ray.init(logging_level=logging.INFO, num_cpus=60, num_gpus=1)
 
     def train(self,):
+        is_tune = self.train_type == "tune"
         algos = Algos(name=self.algo_name, env=self.env,
-                      env_config=self.env_config)
-        if self.train_type == "tune":
+                      env_config=self.env_config, is_tune=is_tune)
+        if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 1000,
+                "training_iteration": 100,
                 "episode_reward_mean": 1,
             }
             cb = [WandbLoggerCallback(
-                project="futures-trading-2",
+                project="futures-trading-3",
                 group="tune",
                 log_config=True,
             )]
@@ -69,7 +70,7 @@ class RLTrainer:
             best_result: Result = results.get_best_result(metric, mode="max")
             print("Best result:", best_result)
             print("Checkpoints path:", best_result.best_checkpoints)
-        elif self.train_type == "train":
+        else:
             # use trainer
             trainer = algos.trainer
             for i in range(1000000):
@@ -82,7 +83,7 @@ class RLTrainer:
 
     def run(self, checkpoint_path, max_episodes: int = 1000):
         trainer = Algos(name=self.algo_name, env=self.env,
-                        env_config=self.env_config).trainer
+                        env_config=self.env_config, train_type=self.train_type).trainer
         trainer.restore(checkpoint_path)
         print("Restored from checkpoint path", checkpoint_path)
 

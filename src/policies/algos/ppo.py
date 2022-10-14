@@ -4,7 +4,7 @@ from ray import tune
 
 class PPOConfig:
 
-    def __init__(self, env: gym.Env, env_config):
+    def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
         self.config = {
             "env": env,
@@ -17,7 +17,7 @@ class PPOConfig:
             "horizon": 14400,  # horizon need to be set
             "use_gae": True,
             "clip_param": 0.3,
-            "lambda": tune.grid_search([0.4, 0.5, 0.99]),
+            "lambda": tune.grid_search([0.4, 0.5, 0.99]) if is_tune else 0.4,
             "sgd_minibatch_size": 128,
             "lr": 0.00001,
             "lr_schedule": [[0, 0.00001], [1000, 0.000005]],

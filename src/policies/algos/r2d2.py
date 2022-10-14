@@ -5,7 +5,7 @@ from ray import tune
 
 class R2D2Config:
 
-    def __init__(self, env: gym.Env, env_config):
+    def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
         self.config = {
             # basic config 
@@ -24,7 +24,7 @@ class R2D2Config:
             # DQN overrides
             "adam_epsilon": 1e-3,
             "lr": 1e-5,
-            "gamma": tune.grid_search([0.5, 0.95]),
+            "gamma": tune.grid_search([0.5, 0.95]) if is_tune else 0.5,
             "train_batch_size": 1024,
             "target_network_update_freq": 1000,
             "training_intensity": 150,
@@ -39,8 +39,8 @@ class R2D2Config:
                 "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": tune.grid_search([20, 40, 60]),
-                "lstm_cell_size": tune.grid_search([256, 512]),
+                "max_seq_len": tune.grid_search([20, 40, 60]) if is_tune else 20,
+                "lstm_cell_size": tune.grid_search([256, 512]) if is_tune else 256,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,
                 "_time_major": True,

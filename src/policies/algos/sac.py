@@ -4,7 +4,7 @@ import gym
 
 class SACConfig:
 
-    def __init__(self, env: gym.Env, env_config):
+    def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
         self.config = {
             # basic config

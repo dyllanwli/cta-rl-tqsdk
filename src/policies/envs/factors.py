@@ -6,6 +6,15 @@ class Factors:
     def __init__(self):
         pass
     
+    def normalize(self, x):
+        if isinstance(x, np.ndarray):
+            min_val = np.min(x)
+            max_val = np.max(x)
+            return (x - min_val) / (max_val - min_val)
+        elif isinstance(x, pd.DataFrame):
+            return (x - x.min()) / (x.max() - x.min())
+
+
     def macd_bar(self, df: pd.DataFrame, short: int = 30, long: int = 60, m: int = 20):
         macd = list(MACD(df, short, long, m)["bar"])
         return macd
