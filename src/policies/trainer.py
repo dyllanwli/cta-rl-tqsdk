@@ -19,11 +19,11 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
-        self.algo_name = "A3C"
+        self.algo_name = "PPO"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
@@ -33,7 +33,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2022, 6, 1),
+            end_dt=date(2022, 8, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,

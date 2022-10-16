@@ -10,7 +10,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 from .constant import EnvConfig
-from .tools import DataLoader, get_symbols_by_names, TargetPosTaskOffline
+from .tools import DataLoader, get_symbols_by_names, TargetPosTaskOffline, SimpleTargetPosTaskOffline
 from .factors import Factors
 
 import wandb
@@ -62,7 +62,7 @@ class FuturesEnvV3_1(gym.Env):
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
         self.factor_length = 50
-        self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
+        self.target_pos_task = SimpleTargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
         self.interval_name_1: str = Interval.ONE_SEC.value  # interval name
         self.bar_length: int = 1000  # subscribed bar length
@@ -191,7 +191,7 @@ class FuturesEnvV3_1(gym.Env):
         print("env: Resetting")
         self.done = False
         self.steps = 0
-        self.last_volume = 0  # last target position volume
+        self.last_action = 0  # last target position volume
         self.last_commision = 0
         self.reward = 0
         self.accumulated_profit = 0
@@ -218,10 +218,10 @@ class FuturesEnvV3_1(gym.Env):
                         {"training_info/accumulated_profit": self.accumulated_profit,
                          "training_info/accumulated_reward": self.accumulated_reward,})
                 self._set_target_volume(0)
-                self.last_volume = 0
+                self.last_action = 0
             else:
                 self._set_target_volume(action)
-                self.last_volume = action
+                self.last_action = action
             state = self._get_state()
             self.reward = self._reward_function()
             self.steps += 1
@@ -237,7 +237,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.is_offline:
             self.info = {
                 "training_info/time": time_to_s_timestamp(self.last_datatime),
-                "training_info/last_volume": self.last_volume,
+                "training_info/last_action": self.last_action,
                 "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
                 # "training_info/bias": self.bias[0],
@@ -264,7 +264,7 @@ class FuturesEnvV3_1(gym.Env):
                 # "market_value": self.account.market_value,
                 "backtest_info/time": time_to_s_timestamp(self.last_datatime),
                 "backtest_info/commision_change": self.account.commission - self.last_commision,
-                "backtest_info/last_volume": self.last_volume,
+                "backtest_info/last_action": self.last_action,
                 "backtest_info/profit": self.profit,
                 "backtest_info/last_price": self.instrument_quote.last_price,
             }

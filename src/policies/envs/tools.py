@@ -106,6 +106,7 @@ class SimpleTargetPosTaskOffline:
         self.positions = deque([])
         self.commission = commission
         self.margin_rate = 4.0
+        self.last_action = 0
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -121,7 +122,7 @@ class SimpleTargetPosTaskOffline:
             logging.debug("hold position")
         elif volume > 0:
             logging.debug("buy long %d", volume)
-            if self.last_volume < 0:
+            if self.last_action < 0:
                 # if last volume is short, sell all short positions
                 while len(self.positions) > 0:
                     profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
@@ -130,14 +131,14 @@ class SimpleTargetPosTaskOffline:
                 self.positions.append(price)
         else:
             logging.debug("buy short %d", -volume)
-            if self.last_volume > 0:
+            if self.last_action > 0:
                 # if last volume is long, sell all long positions
                 while len(self.positions) > 0:
                     profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
             for _ in range(-volume):
                 # buy short positions
                 self.positions.append(price)
-        self.last_volume = volume
+        self.last_action = volume
         return profit
 
 
