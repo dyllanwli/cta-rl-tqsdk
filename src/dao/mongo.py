@@ -36,6 +36,7 @@ class MongoDAO:
 
         # Initialize collections
         self._init_collection('bar', Interval.ONE_SEC)
+        self._init_collection('bar', Interval.FIVE_SEC)
         self._init_collection('bar', Interval.ONE_MIN)
         self._init_collection('bar', Interval.FIVE_MIN)
         self._init_collection('bar', Interval.FIFTEEN_MIN)
@@ -150,10 +151,12 @@ class MongoDAO:
         if intervals is None or "tick" in intervals:
             self.tick_data[instrument] = self.api.get_tick_serial(
                 underlying_symbol, data_length=2)
-
         if intervals is None or "1s" in intervals:
             self.bar_data_1s[instrument] = self.api.get_kline_serial(
                 underlying_symbol, 1, data_length=2)
+        if intervals is None or "5s" in intervals:
+            self.bar_data_5s[instrument] = self.api.get_kline_serial(
+                underlying_symbol, 5, data_length=2)
         if intervals is None or "1m" in intervals:
             self.bar_data_1m[instrument] = self.api.get_kline_serial(
                 underlying_symbol, 60, data_length=2)
@@ -198,6 +201,7 @@ class MongoDAO:
         instrument_quotes: Dict[str, Quote] = dict()
         self.tick_data: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1s: Dict[str, pd.DataFrame] = dict()
+        self.bar_data_5s: Dict[str, pd.DataFrame] = dict()
         self.bar_data_1m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_5m: Dict[str, pd.DataFrame] = dict()
         self.bar_data_15m: Dict[str, pd.DataFrame] = dict()
@@ -210,6 +214,7 @@ class MongoDAO:
 
         self.ticks_data = defaultdict(list)
         self.bars_data_1s = defaultdict(list)
+        self.bars_data_5s = defaultdict(list)
         self.bars_data_1m = defaultdict(list)
         self.bars_data_5m = defaultdict(list)
         self.bars_data_15m = defaultdict(list)
@@ -240,6 +245,10 @@ class MongoDAO:
                         if self.api.is_changing(self.bar_data_1s[instrument].iloc[-1], "datetime"):
                             self.bars_data_1s[instrument].append(
                                 self.bar_data_1s[instrument].iloc[-2])
+                    if intervals is None or "5s" in intervals:
+                        if self.api.is_changing(self.bar_data_5s[instrument].iloc[-1], "datetime"):
+                            self.bars_data_5s[instrument].append(
+                                self.bar_data_5s[instrument].iloc[-2])
                     if intervals is None or "1m" in intervals:
                         if self.api.is_changing(self.bar_data_1m[instrument].iloc[-1], "datetime"):
                             self.bars_data_1m[instrument].append(
@@ -274,6 +283,10 @@ class MongoDAO:
                             self.save_bar_data(underlying_symbol, instrument,
                                             self.bars_data_1s[instrument], Interval.ONE_SEC)
                             self.bars_data_1s[instrument] = []
+                        if intervals is None or "5s" in intervals:
+                            self.save_bar_data(underlying_symbol, instrument,
+                                            self.bars_data_5s[instrument], Interval.FIVE_SEC)
+                            self.bars_data_5s[instrument] = []
                         if intervals is None or "1m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
                                             self.bars_data_1m[instrument], Interval.ONE_MIN)

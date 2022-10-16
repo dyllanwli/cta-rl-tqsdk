@@ -33,20 +33,6 @@ from gym import spaces
 #     print("yes")
 
 
-df = pd.read_csv("test.csv")
+action = spaces.Box(low=-30, high=30, shape=(1,), dtype=np.int64)
 
-
-def normalize(x):
-    if isinstance(x, np.ndarray):
-        min_val = np.min(x)
-        max_val = np.max(x)
-        return (x - min_val) / (max_val - min_val)
-    elif isinstance(x, pd.DataFrame):
-        cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
-        for col in cols:
-            print(x[col])
-            x[col] = (x[col] - x[col].min()) / (x[col].max() - x[col].min())
-            print(x[col])
-
-
-print(normalize(df))
+print(action.contains([30]))

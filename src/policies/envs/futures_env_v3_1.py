@@ -76,15 +76,16 @@ class FuturesEnvV3_1(gym.Env):
         self.max_steps = config.max_steps
         self.max_action = config.max_volume
         if self.action_space_type == "discrete":
-            self.action_space: spaces.Discrete = spaces.Discrete(21)
+            self.action_space: spaces.Discrete = spaces.Discrete(
+                self.max_action*2+1)
         else:
             self.action_space: spaces.Box = spaces.Box(
-                low=0, high=self.max_action*2, shape=(1,), dtype=np.int64)
+                low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            "datetime": spaces.Box(low=0, high = 60, shape=(3,), dtype=np.int64),        
-            self.interval_name_1: spaces.Box(low=0, high=1, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
+            "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
+            self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
@@ -127,13 +128,15 @@ class FuturesEnvV3_1(gym.Env):
 
     def _reward_function(self):
         # Reward is the profit of the last action
-        # set reward bound to [-1, 1]
-        self.accumulated_reward += self.profit
-        return np.tanh(self.profit/100)
+        # set reward bound to [-1, 1] using tanh
+        reward = np.tanh(self.profit/100)
+        self.accumulated_profit += self.profit
+        self.accumulated_reward += reward
+        return reward
 
     def _get_state(self):
         if self.is_offline:
-            # offline state
+            # offline state0
             self.bar_1 = self.offline_data.iloc[self.overall_steps:
                                                 self.overall_steps+self.bar_length]
             self.last_price = self.bar_1.iloc[-1]['close']
@@ -155,26 +158,26 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = 50 # used to avoid the np.NaN in the first 50 bars
+        offset = 50  # used to avoid the np.NaN in the first 50 bars
         factor_input = self.bar_1.iloc[-self.factor_length+offset:]
 
         # normalize the data
-        normalized_state_1 = self.factors.normalize(state_1)
-        normalized_factor_input = self.factors.normalize(factor_input)
+        # normalized_state_1 = self.factors.normalize(state_1)
+        # normalized_factor_input = self.factors.normalize(factor_input)
 
         datetime_state = time_to_datetime(self.last_datatime)
 
         # calculate factors
         self.bias = np.array(self.factors.bias(
-            normalized_factor_input, n=7), dtype=np.float64)
+            factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            normalized_factor_input, short=60, long=120, m=30), dtype=np.float64)
+            factor_input, short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
-            normalized_factor_input, n=26, p=5), dtype=np.float64)
+            factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
             "last_price": np.array([self.last_price], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            self.interval_name_1: normalized_state_1,
+            self.interval_name_1: state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],
             "boll": self.boll,
@@ -191,6 +194,7 @@ class FuturesEnvV3_1(gym.Env):
         self.last_volume = 0  # last target position volume
         self.last_commision = 0
         self.reward = 0
+        self.accumulated_profit = 0
         self.accumulated_reward = 0
         self.profit = 0
         self._update_subscription()
@@ -204,14 +208,15 @@ class FuturesEnvV3_1(gym.Env):
         try:
             assert self.action_space.contains(action)
             if self.action_space_type == "discrete":
-                action = int(action) - 10
+                action = int(action) - 1
             else:
-                action = int(action[0]) - 10
+                action = int(action[0])
             if self.steps >= self.max_steps:
                 self.done = True
                 if self.wandb:
                     wandb.log(
-                        {"training_info/accumulated_reward": self.accumulated_reward})
+                        {"training_info/accumulated_profit": self.accumulated_profit,
+                         "training_info/accumulated_reward": self.accumulated_reward,})
                 self._set_target_volume(0)
                 self.last_volume = 0
             else:
@@ -235,10 +240,10 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_volume": self.last_volume,
                 "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
-                "training_info/bias": self.bias[0],
-                "training_info/macd_bar": self.macd_bar[-1],
-                "training_info/boll_top": self.boll[0],
-                "training_info/boll_bottom": self.boll[1],
+                # "training_info/bias": self.bias[0],
+                # "training_info/macd_bar": self.macd_bar[-1],
+                # "training_info/boll_top": self.boll[0],
+                # "training_info/boll_bottom": self.boll[1],
             }
         else:
             self.info = {

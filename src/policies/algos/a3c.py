@@ -1,8 +1,8 @@
 from ray.rllib.algorithms import a3c
 import gym
+from ray import tune
 
 class A3CConfig:
-
     def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
         self.config = {
@@ -15,22 +15,23 @@ class A3CConfig:
             "num_gpus": 1,
             "framework": "tf",
             "horizon": 14400,  # horizon need to be set
+            "train_batch_size": 256, # shoule be >= rollout_fragment_length
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": 0.4,
+            "lambda": tune.grid_search([0.5, 0.99]) if is_tune else 0.5,
             "grad_clip": 40.0,
-            "lr": 0.00001,
-            "lr_schedule": [[0, 0.00001], [1000, 0.000005]],
+            "lr": tune.grid_search([1e-05, 5e-05]) if is_tune else 5e-06,
+            "lr_schedule": [[0, 5e-05], [100, 1e-06]],
             "vf_loss_coeff": 0.5,
-            "rollout_fragment_length": 50,
-            "min_time_s_per_iteration": 50,
+            "rollout_fragment_length": 200,
+            "min_time_s_per_iteration": 100,
             "model": {
                 "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": 50,
-                "lstm_cell_size": 256,
+                "max_seq_len": 100,
+                "lstm_cell_size": 512,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,
                 "_time_major": True,

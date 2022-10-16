@@ -41,7 +41,7 @@ class TargetPosTaskOffline:
         self.last_volume = 0
         self.positions = deque([])
         self.commission = commission
-        self.margin_rate = 3.0
+        self.margin_rate = 4.0
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -94,6 +94,52 @@ class TargetPosTaskOffline:
                     self.positions.append(price)
         self.last_volume = volume
         return profit
+
+class SimpleTargetPosTaskOffline:
+    """
+    Simple target position task only deal with three actions:
+    1. hold position
+    2. long position
+    3. short position
+    """
+    def __init__(self, commission: float = 5.0, verbose: int = 1):
+        self.positions = deque([])
+        self.commission = commission
+        self.margin_rate = 4.0
+        if verbose == 0:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+    
+    def insert_order(self,):
+        # TODO insert order
+        pass
+
+    def set_target_volume(self, volume, price: float):
+        profit = 0
+        if volume == 0:
+            logging.debug("hold position")
+        elif volume > 0:
+            logging.debug("buy long %d", volume)
+            if self.last_volume < 0:
+                # if last volume is short, sell all short positions
+                while len(self.positions) > 0:
+                    profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
+            for _ in range(volume):
+                # buy long positions
+                self.positions.append(price)
+        else:
+            logging.debug("buy short %d", -volume)
+            if self.last_volume > 0:
+                # if last volume is long, sell all long positions
+                while len(self.positions) > 0:
+                    profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
+            for _ in range(-volume):
+                # buy short positions
+                self.positions.append(price)
+        self.last_volume = volume
+        return profit
+
 
 class DataLoader:
     def __init__(self, config: EnvConfig):

@@ -35,19 +35,19 @@ class EnvConfig:
 
         # other config params
         self.init_balance: float = 2000000
-        self.max_volume: int = 10
+        self.max_volume: int = 1
         self.trade_position_ratio_limit: float = 0.9
 
         self.data_length: Dict[str, int] = {
-            Interval.ONE_SEC.value: 5,
-            Interval.FIVE_SEC.value: 5,
-            Interval.ONE_MIN.value: 5,
-            Interval.FIVE_MIN.value: 5,
-            Interval.FIFTEEN_MIN.value: 5,
-            Interval.THIRTY_MIN.value: 5,
-            Interval.ONE_HOUR.value: 5,
-            Interval.FOUR_HOUR.value: 5,
-            Interval.ONE_DAY.value: 5,
+            Interval.ONE_SEC.value: 1,
+            Interval.FIVE_SEC.value: 1,
+            Interval.ONE_MIN.value: 1,
+            Interval.FIVE_MIN.value: 1,
+            Interval.FIFTEEN_MIN.value: 1,
+            Interval.THIRTY_MIN.value: 1,
+            Interval.ONE_HOUR.value: 1,
+            Interval.FOUR_HOUR.value: 1,
+            Interval.ONE_DAY.value: 1,
         }
 
         self.action_space_type = "discrete" # "discrete" or "continuous"

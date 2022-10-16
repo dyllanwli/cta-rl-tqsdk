@@ -23,7 +23,7 @@ class RLTrainer:
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
-        self.algo_name = "IMPALA"
+        self.algo_name = "A3C"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
@@ -33,7 +33,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2021, 3, 1),
+            end_dt=date(2022, 6, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
@@ -49,8 +49,8 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 1000,
-                "episode_reward_mean": 1,
+                "training_iteration": 500,
+                "episode_reward_mean": 0.9,
             }
             cb = [WandbLoggerCallback(
                 project="futures-trading-3",
