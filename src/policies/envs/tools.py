@@ -176,8 +176,6 @@ class DataLoader:
                 except Exception as e:
                     print("dataloader: random offline data load failed, retrying...")
                     time.sleep(1)
-                if df.shape[0] >= offset:
-                    break
             return df
         else:
             print("dataloader: Loading offline data...")
