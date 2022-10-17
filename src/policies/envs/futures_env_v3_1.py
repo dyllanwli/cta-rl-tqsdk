@@ -64,7 +64,8 @@ class FuturesEnvV3_1(gym.Env):
         self.factor_length = 50
         self.target_pos_task = SimpleTargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.interval_name_1: str = Interval.ONE_SEC.value  # interval name
+        self.interval_1 = Interval.ONE_MIN
+        self.intv_name_1: str = self.interval_1.value  # interval name
         self.bar_length: int = 1000  # subscribed bar length
         if self.is_offline:
             self._set_offline_data()
@@ -86,7 +87,7 @@ class FuturesEnvV3_1(gym.Env):
             "close_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
-            # self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
+            # self.intv_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.intv_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
@@ -95,7 +96,7 @@ class FuturesEnvV3_1(gym.Env):
     def _set_offline_data(self):
         # get offline data from db
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
-            interval=Interval.ONE_SEC, instrument_id=self.symbol, offset_bar_length=self.bar_length)
+            interval=self.interval_1, instrument_id=self.symbol, offset_bar_length=self.bar_length)
         self.overall_steps = 0
 
     def _set_api_data(self):
@@ -146,13 +147,13 @@ class FuturesEnvV3_1(gym.Env):
             self.overall_steps += 1
 
             state_1 = self.bar_1[self.OHLCV].iloc[
-                -self.data_length[self.interval_name_1]:].to_numpy(dtype=np.float64)
+                -self.data_length[self.intv_name_1]:].to_numpy(dtype=np.float64)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_name_1]:].to_numpy(
+                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.intv_name_1]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
@@ -183,7 +184,7 @@ class FuturesEnvV3_1(gym.Env):
             "close_price": np.array([self.last_price], dtype=np.float64),
             "volume": np.array([self.volume], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            # self.interval_name_1: state_1,
+            # self.intv_name_1: state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],
             "boll": self.boll,

@@ -33,7 +33,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2022, 8, 1),
+            end_dt=date(2020, 6, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
