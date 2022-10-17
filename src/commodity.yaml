@@ -6,7 +6,7 @@ commodity:
   vegetable_oil: CZCE.OI # 菜油
   rapeseed: CZCE.RS # 菜籽
   staple_fiber: CZCE.PF # 短纤
-  cotton: CZCE.CF # 一号棉花 4.73 0
+  cotton: CZCE.CF # 一号棉花 4.73 0 | 1s - 5s - 1m - 1d - 20160101 - 20220901
   methanol: CZCE.MA # 甲醇
 
   stainless_steel: SHFE.ss # 不锈钢
@@ -20,10 +20,11 @@ commodity:
   styrene: DCE.eb # 苯乙烯
   bean_2: DCE.b # 豆二
   starch: DCE.cs # 淀粉
-  soybean: DCE.m # 豆粕
+  soybean: DCE.m # 豆粕  | 1s - 5s - 1m - 1d - 20160101 - 20220901
   iron_orb: DCE.i # 铁矿石
   egg: DCE.jd # 鸡蛋
   palm_oil: DCE.pm # 棕榈油 0.22 0
+  soybean_oil: DCE.y # 豆油 | 1s - 5s - 1m - 1d - 20160101 - 20220901
 
   
   
