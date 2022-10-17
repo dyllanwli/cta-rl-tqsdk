@@ -5,7 +5,7 @@ from ray import tune
 class A3CConfig:
     def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
-        num_workers = 2
+        num_workers = 5
         self.config = {
             # basic config 
             "env": env,
@@ -13,18 +13,18 @@ class A3CConfig:
             "num_workers": num_workers,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
-            "num_gpus": 1,
+            # "num_gpus": 1,
             "framework": "torch",
             "horizon": 14400,  # horizon need to be set
             "train_batch_size": 256, # shoule be >= rollout_fragment_length
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": 0.6,
+            "lambda": tune.grid_search([0.3, 0.5, 0.6, 0.9]) if is_tune else 0.5,
             "grad_clip": 40.0,
             "lr": 1e-05,
             "lr_schedule": [[0, 1e-05], [100, 5e-05]],
-            "vf_loss_coeff": tune.grid_search([0.5, 1.0]) if is_tune else 0.5,
+            "vf_loss_coeff": tune.grid_search([0.5, 0.4]) if is_tune else 0.5,
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {
