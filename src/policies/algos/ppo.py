@@ -9,18 +9,18 @@ class PPOConfig:
         self.config = {
             "env": env,
             "env_config": env_config,
-            "num_workers": 5,
+            "num_workers": 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
-            # "num_gpus": 1,
+            "num_gpus": 1,
             "framework": "tf",
             "horizon": 14400,  # horizon need to be set
             "use_gae": True,
             "clip_param": 0.3,
-            "lambda": tune.grid_search([0.4, 0.5, 0.99]) if is_tune else 0.4,
+            "lambda": tune.grid_search([0.5, 0.99]) if is_tune else 0.5,
             "sgd_minibatch_size": 128,
             "lr": tune.grid_search([1e-05, 5e-05]) if is_tune else 1e-05,
-            "lr_schedule": [[0, 5e-05], [100, 1e-05]],
+            # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
             "vf_loss_coeff": 0.5,
             "model": {
                 "fcnet_hiddens": [256, 256, 256],

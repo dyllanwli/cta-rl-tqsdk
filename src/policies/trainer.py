@@ -23,7 +23,7 @@ class RLTrainer:
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
-        self.algo_name = "PPO"
+        self.algo_name = "A3C"
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
@@ -49,7 +49,7 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 500,
+                "training_iteration": 600,
                 "episode_reward_mean": 0.9,
             }
             cb = [WandbLoggerCallback(

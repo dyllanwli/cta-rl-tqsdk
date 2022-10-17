@@ -83,9 +83,10 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
+            "close_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
+            "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
-            self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
+            # self.interval_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_name_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
@@ -101,7 +102,7 @@ class FuturesEnvV3_1(gym.Env):
         self.api: TqApi = self.dataloader.get_api()
         self.account = self.api.get_account()
         self.balance = deepcopy(self.account.balance)
-        self.instrument_quote = self.api.get_quote(self.symbol)
+        self.instrument_quote: Quote = self.api.get_quote(self.symbol)
         self.underlying_symbol = self.instrument_quote.underlying_symbol
 
     def _set_target_volume(self, volume: int):
@@ -140,6 +141,7 @@ class FuturesEnvV3_1(gym.Env):
             self.bar_1 = self.offline_data.iloc[self.overall_steps:
                                                 self.overall_steps+self.bar_length]
             self.last_price = self.bar_1.iloc[-1]['close']
+            self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
             self.overall_steps += 1
 
@@ -153,6 +155,7 @@ class FuturesEnvV3_1(gym.Env):
                     state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_name_1]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
+                    self.volume = self.instrument_quote.volume
                     self.last_datatime = self.instrument_quote.datetime
                     if np.isnan(state_1).any():
                         self.api.wait_update()
@@ -173,11 +176,14 @@ class FuturesEnvV3_1(gym.Env):
         self.macd_bar = np.array(self.factors.macd_bar(
             factor_input, short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
+
+
             factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
-            "last_price": np.array([self.last_price], dtype=np.float64),
+            "close_price": np.array([self.last_price], dtype=np.float64),
+            "volume": np.array([self.volume], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            self.interval_name_1: state_1,
+            # self.interval_name_1: state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar[-self.factor_length:],
             "boll": self.boll,
@@ -239,7 +245,8 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/time": time_to_s_timestamp(self.last_datatime),
                 "training_info/last_action": self.last_action,
                 "training_info/profit": self.profit,
-                "training_info/last_price": self.last_price,
+                "training_info/close_price": self.last_price,
+                "training_info/volume": self.volume,
                 # "training_info/bias": self.bias[0],
                 # "training_info/macd_bar": self.macd_bar[-1],
                 # "training_info/boll_top": self.boll[0],
@@ -266,7 +273,8 @@ class FuturesEnvV3_1(gym.Env):
                 "backtest_info/commision_change": self.account.commission - self.last_commision,
                 "backtest_info/last_action": self.last_action,
                 "backtest_info/profit": self.profit,
-                "backtest_info/last_price": self.instrument_quote.last_price,
+                "backtest_info/close_price": self.instrument_quote.last_price,
+                "backtest_info/volume": self.instrument_quote.volume,
             }
         # self.last_commision = self.account.commission
         if self.wandb:

@@ -1,6 +1,7 @@
 from typing import Dict, List
 import logging
 from datetime import datetime
+import time
 from collections import defaultdict, deque
 import numpy as np
 import pandas as pd
@@ -167,9 +168,16 @@ class DataLoader:
             sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
             sample_start_dt = time_to_datetime(sample_start).date()
             # print("dataloader: Loading random offline data from ", sample_start_dt)
-            df = self.mongo.load_bar_data(
-                instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
-            # print("dataloader: random offline data loaded, shape: ", df.shape)
+            while True:
+                try:
+                    df = self.mongo.load_bar_data(
+                        instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
+                    # print("dataloader: random offline data loaded, shape: ", df.shape)
+                except Exception as e:
+                    print("dataloader: random offline data load failed, retrying...")
+                    time.sleep(1)
+                if df.shape[0] >= offset:
+                    break
             return df
         else:
             print("dataloader: Loading offline data...")
