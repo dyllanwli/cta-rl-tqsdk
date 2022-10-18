@@ -9,28 +9,30 @@ class A3CConfig:
             # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": 1,
+            "num_workers": 5 if is_tune else 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
-            "num_gpus": 1,
+            "num_gpus": 0 if is_tune else 1,
             "framework": "torch",
             "horizon": 14400,  # horizon need to be set
             "train_batch_size": 256, # shoule be >= rollout_fragment_length
+            # "simple_optimizer": True,
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": tune.grid_search([0.3, 0.5, 0.6, 0.9]) if is_tune else 0.3,
+            "lambda": tune.grid_search([0.3, 0.5,]) if is_tune else 0.3,
             "grad_clip": 40.0,
             "lr": 1e-05,
             "lr_schedule": [[0, 1e-05], [100, 5e-05]],
-            "vf_loss_coeff": tune.grid_search([0.5, 0.4]) if is_tune else 0.5,
+            "vf_loss_coeff": tune.grid_search([0.5]) if is_tune else 0.5,
+            # "entropy_coeff": tune.grid_search([0.001, 0.0001]) if is_tune else 0.01,
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {
                 "fcnet_hiddens": [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": 128,
+                "max_seq_len": 100,
                 "lstm_cell_size": 512,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,

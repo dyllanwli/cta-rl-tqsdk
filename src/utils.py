@@ -1,5 +1,5 @@
 
-from enum import Enum
+from typing import NamedTuple
 import yaml
 import os.path
 
@@ -28,24 +28,29 @@ def get_trading_time(quote):
 
 
 
-class Interval(Enum):
-    ONE_SEC = "1s"
-    FIVE_SEC = "5s"
-    ONE_MIN = "1m"
-    FIVE_MIN = "5m"
-    FIFTEEN_MIN = "15m"
-    THIRTY_MIN = "30m"
-    ONE_HOUR = "1h"
-    FOUR_HOUR = "4h"
-    ONE_DAY = "1d"
-    TICK = "tick"
+class Interval(NamedTuple):
+    ONE_SEC: str = "1s"
+    FIVE_SEC: str = "5s"
+    ONE_MIN: str = "1m"
+    FIVE_MIN: str = "5m"
+    FIFTEEN_MIN: str = "15m"
+    THIRTY_MIN: str = "30m"
+    ONE_HOUR: str = "1h"
+    FOUR_HOUR: str = "4h"
+    ONE_DAY: str = "1d"
+    TICK: str = "tick"
 
-class MaxStepByDay(Enum):
-    ONE_SEC = 13500
-    FIVE_SEC = 4320
-    ONE_MIN = 360
-    FIVE_MIN = 72
-    FIFTEEN_MIN = 24
+class MaxStepByDay(NamedTuple):
+    ONE_SEC: int = 13500
+    FIVE_SEC: int = 4320
+    ONE_MIN: int = 360
+    FIVE_MIN: int = 72
+    FIFTEEN_MIN: int = 24
+
+class InitOverallStep(NamedTuple):
+    ONE_SEC: int = 2*60*60
+    FIVE_SEC: int = 2*60*12
+    ONE_MIN: int = 2*60
 
 
 

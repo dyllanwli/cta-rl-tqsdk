@@ -31,8 +31,13 @@ from gym import spaces
 
 # if observation.contains(state):
 #     print("yes")
+from typing import NamedTuple
 
+class InitOverallStep(NamedTuple):
+    ONE_SEC: int = 2*60*60
+    FIVE_SEC: int = 2*60*12
+    ONE_MIN: int = 2*60
 
-action = spaces.Box(low=-30, high=30, shape=(1,), dtype=np.int64)
+init_over_step = InitOverallStep()
 
-print(action.contains([30]))
+print(InitOverallStep.ONE_SEC)

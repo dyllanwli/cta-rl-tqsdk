@@ -13,12 +13,10 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
 
-
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
-
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
@@ -34,7 +32,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2021, 1, 1),
+            end_dt=date(2021, 11, 3),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
@@ -51,7 +49,7 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 600,
+                "training_iteration": 500,
                 "episode_reward_mean": 0.9,
             }
             cb = [WandbLoggerCallback(
@@ -61,10 +59,11 @@ class RLTrainer:
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
                                run_config=air.RunConfig(
-                                   stop=stop,
-                                   checkpoint_config=air.CheckpointConfig(
-                                       checkpoint_frequency=100),
-                                   callbacks=cb
+                                    verbose=2,
+                                    stop=stop,
+                                    checkpoint_config=air.CheckpointConfig(
+                                        checkpoint_frequency=100),
+                                    callbacks=cb
                                ))
             results = tuner.fit()
             metric = "episode_reward_mean"

@@ -17,26 +17,11 @@ from commodity import Commodity
 from .constant import EnvConfig
 
 from dao.mongo import MongoDAO
-from utils import Interval
-
 
 def get_symbols_by_names(config: EnvConfig):
     # get instrument symbols
     cmod = Commodity()
     return [cmod.get_instrument_name(name) for name in config.symbols]
-
-
-duration_seconds: Dict[str, int] = {
-    Interval.ONE_SEC: 1,
-    Interval.FIVE_SEC: 5,
-    Interval.ONE_MIN: 60,
-    Interval.FIVE_MIN: 300,
-    Interval.FIFTEEN_MIN: 900,
-    Interval.THIRTY_MIN: 1800,
-    Interval.ONE_HOUR: 3600,
-    Interval.FOUR_HOUR: 14400,
-    Interval.ONE_DAY: 86400,
-}
 
 class TargetPosTaskOffline:
     def __init__(self, commission: float = 5.0, verbose: int = 1):
@@ -157,20 +142,19 @@ class DataLoader:
         return self._set_account(
             self.config.auth, self.config.backtest, self.config.init_balance)
 
-    def get_offline_data(self, interval: Interval, instrument_id: str, offset_bar_length: int) -> pd.DataFrame:
+    def get_offline_data(self, interval: str, instrument_id: str, offset_bar_length: int) -> pd.DataFrame:
         if self.is_random_sample:
-            offset = self.config.max_steps + offset_bar_length + 25300 # extend for 7 hours
-            
-
-            low_dt = time_to_s_timestamp(self.start_dt)
-            high_dt = time_to_s_timestamp(self.end_dt) - offset
-
-            sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
-            start_dt: datetime = time_to_datetime(sample_start)
-            # add 7 hours
-            start_dt = start_dt + timedelta(hours=7)
-            # print("dataloader: Loading random offline data from ", sample_start_dt)
             while True:
+                offset = self.config.max_steps + offset_bar_length + 25300 # extend for 7 hours
+                low_dt = time_to_s_timestamp(self.start_dt)
+                high_dt = time_to_s_timestamp(self.end_dt) - offset
+
+                sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
+                start_dt: datetime = time_to_datetime(sample_start).date()
+                start_dt = datetime.combine(start_dt, datetime.min.time())
+                # add 7 hours
+                start_dt = start_dt + timedelta(hours=7)
+                # print("dataloader: Loading random offline data from ", sample_start_dt)
                 try:
                     df = self.mongo.load_bar_data(
                         instrument_id, start_dt, self.end_dt, interval, limit=offset)

@@ -18,7 +18,7 @@ from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
-from utils import Interval
+from utils import Interval, InitOverallStep
 
 
 class FuturesEnvV3_1(gym.Env):
@@ -33,6 +33,7 @@ class FuturesEnvV3_1(gym.Env):
         + Offline TargetPosTask
         + Offline Data
         + TODO: update dataloader distribution
+        + TODO: flatten the observation
     """
 
     def __init__(self, config):
@@ -61,11 +62,13 @@ class FuturesEnvV3_1(gym.Env):
         # Trading config
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
-        self.factor_length = 50
+        self.factor_length = 20
         self.target_pos_task = SimpleTargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.interval_1 = Interval.ONE_MIN
-        self.intv_name_1: str = self.interval_1.value  # interval name
+        self.INTERVAL = Interval()
+        self.INIT_STEP = InitOverallStep()
+        self.interval_1: str = self.INTERVAL.ONE_MIN
+        self.init_overall_steps = InitOverallStep
         self.bar_length: int = 1000  # subscribed bar length
         if self.is_offline:
             self._set_offline_data()
@@ -87,17 +90,18 @@ class FuturesEnvV3_1(gym.Env):
             "close_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
-            # self.intv_name_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.intv_name_1], 5), dtype=np.float64),
+            # self.interval_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
+            "kdj": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
         })
 
     def _set_offline_data(self):
         # get offline data from db
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
             interval=self.interval_1, instrument_id=self.symbol, offset_bar_length=self.bar_length)
-        self.overall_steps = 0
+        self.overall_steps = 120
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -150,13 +154,13 @@ class FuturesEnvV3_1(gym.Env):
             self.overall_steps += 1
 
             state_1 = self.bar_1[self.OHLCV].iloc[
-                -self.data_length[self.intv_name_1]:].to_numpy(dtype=np.float64)
+                -self.data_length[self.interval_1]:].to_numpy(dtype=np.float64)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.intv_name_1]:].to_numpy(
+                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
@@ -165,7 +169,7 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = 100  # used to avoid the np.NaN in the first 50 bars
+        offset = 100 
         factor_input = self.bar_1.iloc[-self.factor_length+offset:]
 
         # normalize the data
@@ -178,17 +182,30 @@ class FuturesEnvV3_1(gym.Env):
         self.bias = np.array(self.factors.bias(
             factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            factor_input, short=30, long=60, m=15), dtype=np.float64)
+            factor_input, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
         self.boll = np.array(self.factors.boll(
             factor_input, n=26, p=5), dtype=np.float64)
+        self.kdj = np.array(self.factors.kdj(
+            factor_input, n=9, m1=3, m2=3), dtype=np.float64)
+
+        # deal with the np.NaN
+        # self.macd_bar = np.nan_to_num(self.macd_bar, nan=np.nanmean(self.macd_bar))
+        # self.kdj = np.nan_to_num(self.kdj, nan=0)
+
+        assert not np.isnan(self.bias).any()
+        assert not np.isnan(self.macd_bar).any()
+        assert not np.isnan(self.boll).any()
+        assert not np.isnan(self.kdj).any()
+
         state = dict({
             "close_price": np.array([self.last_price], dtype=np.float64),
             "volume": np.array([self.volume], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            # self.intv_name_1: state_1,
+            # self.interval_1: state_1,
             "bias": self.bias,
-            "macd_bar": self.macd_bar[-self.factor_length:],
+            "macd_bar": self.macd_bar,
             "boll": self.boll,
+            "kdj": self.kdj,
         })
         return state
 
@@ -196,7 +213,7 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        print("env: Resetting")
+        # print("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_action = 0  # last target position volume
@@ -250,7 +267,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.is_offline:
             self.info = {
                 # "training_info/time": time_to_s_timestamp(self.last_datatime),
-                # "training_info/last_action": self.last_action,
+                "training_info/last_action": self.last_action,
                 # "training_info/profit": self.profit,
                 # "training_info/close_price": self.last_price,
                 # "training_info/volume": self.volume,
@@ -285,8 +302,7 @@ class FuturesEnvV3_1(gym.Env):
             }
         # self.last_commision = self.account.commission
         if self.wandb:
-            # wandb.log(self.info)
-            pass
+            wandb.log(self.info)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)

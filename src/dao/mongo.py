@@ -33,20 +33,21 @@ class MongoDAO:
 
         # Initialize database
         self.db: Database = self.client[self.db_name]
+        self.INTERVAL = Interval()
 
         # Initialize collections
-        self._init_collection('bar', Interval.ONE_SEC)
-        self._init_collection('bar', Interval.FIVE_SEC)
-        self._init_collection('bar', Interval.ONE_MIN)
-        self._init_collection('bar', Interval.FIVE_MIN)
-        self._init_collection('bar', Interval.FIFTEEN_MIN)
-        self._init_collection('bar', Interval.THIRTY_MIN)
-        self._init_collection('bar', Interval.ONE_HOUR)
-        # self._init_collection('bar', Interval.FOUR_HOUR)
-        self._init_collection('bar', Interval.ONE_DAY)
-        self._init_collection('tick', Interval.TICK)
+        self._init_collection('bar', self.INTERVAL.ONE_SEC)
+        self._init_collection('bar', self.INTERVAL.FIVE_SEC)
+        self._init_collection('bar', self.INTERVAL.ONE_MIN)
+        self._init_collection('bar', self.INTERVAL.FIVE_MIN)
+        self._init_collection('bar', self.INTERVAL.FIFTEEN_MIN)
+        self._init_collection('bar', self.INTERVAL.THIRTY_MIN)
+        self._init_collection('bar', self.INTERVAL.ONE_HOUR)
+        # self._init_collection('bar', self.INTERVAL.FOUR_HOUR)
+        self._init_collection('bar', self.INTERVAL.ONE_DAY)
+        self._init_collection('tick', self.INTERVAL.TICK)
 
-    def _init_collection(self, collection_name: str, interval: Interval) -> None:
+    def _init_collection(self, collection_name: str, interval: str) -> None:
         # Initialize collection
         collection = self.db[collection_name + '_' + interval.value]
         # Create index
@@ -71,8 +72,8 @@ class MongoDAO:
         )
         return collection
 
-    def load_bar_data(self, instrument_id: str, start: datetime, end: datetime, interval: Interval, limit: int = 0) -> pd.DataFrame:
-        collection = self.db['bar_' + interval.value]
+    def load_bar_data(self, instrument_id: str, start: datetime, end: datetime, interval: str, limit: int = 0) -> pd.DataFrame:
+        collection = self.db['bar_' + interval]
         cursor = collection.find(
             {
                 "instrument_id": instrument_id,
@@ -89,7 +90,7 @@ class MongoDAO:
         df['datetime'] = pd.to_datetime(df['datetime'])
         return df
 
-    def save_bar_data(self, symbol: str, instrument_id: str, bars: List[pd.Series], interval: Interval) -> None:
+    def save_bar_data(self, symbol: str, instrument_id: str, bars: List[pd.Series], interval: str) -> None:
         """
         kline: pd.Series
             * id: 1234 (k线序列号)
@@ -125,7 +126,7 @@ class MongoDAO:
     def save_tick_data(self, symbol: str, instrument_id: str, ticks: List[pd.Series]) -> None:
         if len(ticks) == 0:
             return
-        collection = self.db['tick_' + Interval.TICK.value]
+        collection = self.db['tick_' + self.INTERVAL.TICK]
         requests: List[ReplaceOne] = []
         print("save tick data: ", symbol, instrument_id)
         for tick in ticks:
@@ -281,33 +282,33 @@ class MongoDAO:
                             self.ticks_data[instrument] = []
                         if intervals is None or "1s" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1s[instrument], Interval.ONE_SEC)
+                                            self.bars_data_1s[instrument], self.INTERVAL.ONE_SEC)
                             self.bars_data_1s[instrument] = []
                         if intervals is None or "5s" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_5s[instrument], Interval.FIVE_SEC)
+                                            self.bars_data_5s[instrument], self.INTERVAL.FIVE_SEC)
                             self.bars_data_5s[instrument] = []
                         if intervals is None or "1m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1m[instrument], Interval.ONE_MIN)
+                                            self.bars_data_1m[instrument], self.INTERVAL.ONE_MIN)
                             self.bars_data_1m[instrument] = []
                         if intervals is None or "5m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_5m[instrument], Interval.FIVE_MIN)
+                                            self.bars_data_5m[instrument], self.INTERVAL.FIVE_MIN)
                             self.bars_data_5m[instrument] = []
                         if intervals is None or "15m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_15m[instrument], Interval.FIFTEEN_MIN)
+                                            self.bars_data_15m[instrument], self.INTERVAL.FIFTEEN_MIN)
                             self.bars_data_15m[instrument] = []
                         if intervals is None or "30m" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_30m[instrument], Interval.THIRTY_MIN)
+                                            self.bars_data_30m[instrument], self.INTERVAL.THIRTY_MIN)
                             self.bars_data_30m[instrument] = []
                         if intervals is None or "1h" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1h[instrument], Interval.ONE_HOUR)
+                                            self.bars_data_1h[instrument], self.INTERVAL.ONE_HOUR)
                             self.bars_data_1h[instrument] = []
                         if intervals is None or "1d" in intervals:
                             self.save_bar_data(underlying_symbol, instrument,
-                                            self.bars_data_1d[instrument], Interval.ONE_DAY)
+                                            self.bars_data_1d[instrument], self.INTERVAL.ONE_DAY)
                             self.bars_data_1d[instrument] = []

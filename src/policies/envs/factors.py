@@ -37,3 +37,10 @@ class Factors:
     def bias(self, df: pd.DataFrame, n: int = 6):
         bias = BIAS(df, n)["bias"].iloc[-1]
         return [bias]
+
+    def kdj(self, df, n=9, m1=3, m2=3):
+        kdj = KDJ(df, n, m1, m2)
+        k = kdj["k"].iloc[-1]
+        d = kdj["d"].iloc[-1]
+        j = kdj["j"].iloc[-1]
+        return [k, d, j]
