@@ -49,7 +49,7 @@ class MongoDAO:
 
     def _init_collection(self, collection_name: str, interval: str) -> None:
         # Initialize collection
-        collection = self.db[collection_name + '_' + interval.value]
+        collection = self.db[collection_name + '_' + interval]
         # Create index
         collection.create_index(
             [
@@ -105,7 +105,7 @@ class MongoDAO:
         """
         if len(bars) == 0:
             return
-        collection = self.db['bar_' + interval.value]
+        collection = self.db['bar_' + interval]
         requests: List[ReplaceOne] = []
         print("save bar data: ", symbol, instrument_id, interval)
         for bar in bars:

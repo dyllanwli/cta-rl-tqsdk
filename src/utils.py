@@ -40,13 +40,6 @@ class Interval(NamedTuple):
     ONE_DAY: str = "1d"
     TICK: str = "tick"
 
-class MaxStepByDay(NamedTuple):
-    ONE_SEC: int = 13500
-    FIVE_SEC: int = 4320
-    ONE_MIN: int = 360
-    FIVE_MIN: int = 72
-    FIFTEEN_MIN: int = 24
-
 class InitOverallStep(NamedTuple):
     ONE_SEC: int = 2*60*60
     FIVE_SEC: int = 2*60*12

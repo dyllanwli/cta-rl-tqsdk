@@ -18,8 +18,6 @@ from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
-from utils import Interval, InitOverallStep
-
 
 class FuturesEnvV3_1(gym.Env):
     """
@@ -65,11 +63,9 @@ class FuturesEnvV3_1(gym.Env):
         self.factor_length = 20
         self.target_pos_task = SimpleTargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.INTERVAL = Interval()
-        self.INIT_STEP = InitOverallStep()
-        self.interval_1: str = self.INTERVAL.ONE_MIN
-        self.init_overall_steps = InitOverallStep
-        self.bar_length: int = 1000  # subscribed bar length
+        self.interval_1: str = config.interval_1
+        self.init_step_1: int  = config.init_step_1
+        self.bar_length: int = 300  # subscribed bar length
         if self.is_offline:
             self._set_offline_data()
         else:
@@ -101,7 +97,7 @@ class FuturesEnvV3_1(gym.Env):
         # get offline data from db
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
             interval=self.interval_1, instrument_id=self.symbol, offset_bar_length=self.bar_length)
-        self.overall_steps = 120
+        self.overall_steps = self.init_step_1
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
