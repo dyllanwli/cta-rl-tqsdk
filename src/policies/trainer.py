@@ -6,7 +6,6 @@ from .envs.constant import EnvConfig
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
 from pprint import pprint
-from tqsdk import TqApi, TqAuth, TqBacktest, TqSim
 import gym
 from ray import air, tune
 from ray.air.result import Result
@@ -19,7 +18,7 @@ from datetime import date, datetime
 
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "tune"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
@@ -27,16 +26,19 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
+        self.project_name = "futures-trading-4"
+        
         # only trainer mode will log to wandb in env
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2020, 6, 1),
+            end_dt=date(2021, 1, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
+            project_name=self.project_name,
         )}
         self.env = FuturesEnv
 
@@ -53,13 +55,12 @@ class RLTrainer:
                 "episode_reward_mean": 0.9,
             }
             cb = [WandbLoggerCallback(
-                project="futures-trading-3",
+                project=self.project_name,
                 group="tune",
                 log_config=True,
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
-                               run_config=air.RunConfig( 
-                                   name="futures-trading",
+                               run_config=air.RunConfig(
                                    stop=stop,
                                    checkpoint_config=air.CheckpointConfig(
                                        checkpoint_frequency=100),

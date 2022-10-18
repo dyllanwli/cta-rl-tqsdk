@@ -173,6 +173,7 @@ class DataLoader:
                     df = self.mongo.load_bar_data(
                         instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
                     # print("dataloader: random offline data loaded, shape: ", df.shape)
+                    break
                 except Exception as e:
                     print("dataloader: random offline data load failed, retrying...")
                     time.sleep(1)

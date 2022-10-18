@@ -19,6 +19,7 @@ class EnvConfig:
                  max_steps: int = 13000,  # max actions per episode
                  is_offline: bool = False,
                  is_random_sample: bool = False,
+                 project_name: str = "futures-trading-4",
                  ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
@@ -27,6 +28,7 @@ class EnvConfig:
         self.live_market: bool = live_market
         self.live_account: TqAccount = live_account
         self.wandb = wandb
+        self.project_name = project_name
 
         # dataloader settings
         self.max_steps: int = max_steps

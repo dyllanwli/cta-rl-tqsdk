@@ -32,7 +32,7 @@ class FuturesEnvV3_2(gym.Env):
         - factors
         + Offline TargetPosTask
         + Offline Data
-        + TODO: update dataloader distribution
+        + TODO: BC https://github.com/ray-project/ray/blob/master/rllib/algorithms/bc/bc.py
     """
 
     def __init__(self, config):

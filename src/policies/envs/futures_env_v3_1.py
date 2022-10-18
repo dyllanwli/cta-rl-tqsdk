@@ -41,7 +41,7 @@ class FuturesEnvV3_1(gym.Env):
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
-            wandb.init(project="futures-trading-3",
+            wandb.init(project=config.project_name,
                        name=self.wandb, group="train")
 
         self._skip_env_checking = True
@@ -177,8 +177,6 @@ class FuturesEnvV3_1(gym.Env):
         self.macd_bar = np.array(self.factors.macd_bar(
             factor_input, short=60, long=120, m=30), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
-
-
             factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
             "close_price": np.array([self.last_price], dtype=np.float64),

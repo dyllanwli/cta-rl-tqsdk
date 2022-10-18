@@ -5,15 +5,14 @@ from ray import tune
 class A3CConfig:
     def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
-        num_workers = 5
         self.config = {
             # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": num_workers,
+            "num_workers": 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
-            # "num_gpus": 1,
+            "num_gpus": 1,
             "framework": "torch",
             "horizon": 14400,  # horizon need to be set
             "train_batch_size": 256, # shoule be >= rollout_fragment_length

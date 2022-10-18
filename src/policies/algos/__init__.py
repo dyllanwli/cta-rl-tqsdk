@@ -7,8 +7,6 @@ from .impala import IMPALAConfig
 import gym
 
 from ray.rllib.algorithms.algorithm import Algorithm
-
-
 class Algos:
     def __init__(self, name: str, env: gym.Env, env_config, is_tune: bool):
         if name == "PPO":
