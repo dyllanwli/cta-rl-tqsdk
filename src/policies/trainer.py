@@ -27,7 +27,7 @@ class RLTrainer:
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
         self.project_name = "futures-trading-4"
-        
+
         # only trainer mode will log to wandb in env
         self.env_config = {"cfg": EnvConfig(
             auth=auth,
@@ -74,10 +74,12 @@ class RLTrainer:
         else:
             # use trainer
             trainer = algos.trainer
-            for i in range(1000000):
+            print(algos.config)
+            for i in range(100000):
                 result = trainer.train()
                 self.logging(result)
                 if i % 500 == 0:
+                    print(pprint(result))
                     checkpoint = trainer.save(checkpoint_dir="checkpoints")
                     print("checkpoint saved at", checkpoint)
         ray.shutdown()

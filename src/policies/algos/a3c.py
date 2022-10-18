@@ -19,7 +19,7 @@ class A3CConfig:
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": tune.grid_search([0.3, 0.5, 0.6, 0.9]) if is_tune else 0.5,
+            "lambda": tune.grid_search([0.3, 0.5, 0.6, 0.9]) if is_tune else 0.3,
             "grad_clip": 40.0,
             "lr": 1e-05,
             "lr_schedule": [[0, 1e-05], [100, 5e-05]],

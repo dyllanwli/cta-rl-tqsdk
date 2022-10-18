@@ -131,9 +131,12 @@ class FuturesEnvV3_1(gym.Env):
     def _reward_function(self):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1] using tanh
-        reward = np.tanh(self.profit/100)
+        hold_penalty = 0.001
+        reward = np.tanh((self.profit - hold_penalty)/100)
         self.accumulated_profit += self.profit
         self.accumulated_reward += reward
+        if self.profit != 0:
+            self.action_count += 1
         return reward
 
     def _get_state(self):
@@ -162,7 +165,7 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = 50  # used to avoid the np.NaN in the first 50 bars
+        offset = 100  # used to avoid the np.NaN in the first 50 bars
         factor_input = self.bar_1.iloc[-self.factor_length+offset:]
 
         # normalize the data
@@ -175,7 +178,7 @@ class FuturesEnvV3_1(gym.Env):
         self.bias = np.array(self.factors.bias(
             factor_input, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            factor_input, short=60, long=120, m=30), dtype=np.float64)
+            factor_input, short=30, long=60, m=15), dtype=np.float64)
         self.boll = np.array(self.factors.boll(
             factor_input, n=26, p=5), dtype=np.float64)
         state = dict({
@@ -202,6 +205,7 @@ class FuturesEnvV3_1(gym.Env):
         self.accumulated_profit = 0
         self.accumulated_reward = 0
         self.profit = 0
+        self.action_count = 0
         self._update_subscription()
         if self.is_random_sample:
             self._set_offline_data()
@@ -218,10 +222,7 @@ class FuturesEnvV3_1(gym.Env):
                 action = int(action[0])
             if self.steps >= self.max_steps:
                 self.done = True
-                if self.wandb:
-                    wandb.log(
-                        {"training_info/accumulated_profit": self.accumulated_profit,
-                         "training_info/accumulated_reward": self.accumulated_reward,})
+                self.log_epsoide_info()
                 self._set_target_volume(0)
                 self.last_action = 0
             else:
@@ -237,15 +238,22 @@ class FuturesEnvV3_1(gym.Env):
             print("env: Error in step, resetting position to 0. Action: ", action)
             self._set_target_volume(0)
             raise e
+            
+    def log_epsoide_info(self):
+        if self.wandb:
+            wandb.log(
+                {"training_info/accumulated_profit": self.accumulated_profit,
+                 "training_info/accumulated_reward": self.accumulated_reward,
+                 "training_info/action_count": self.action_count,})
 
     def log_info(self,):
         if self.is_offline:
             self.info = {
-                "training_info/time": time_to_s_timestamp(self.last_datatime),
-                "training_info/last_action": self.last_action,
-                "training_info/profit": self.profit,
-                "training_info/close_price": self.last_price,
-                "training_info/volume": self.volume,
+                # "training_info/time": time_to_s_timestamp(self.last_datatime),
+                # "training_info/last_action": self.last_action,
+                # "training_info/profit": self.profit,
+                # "training_info/close_price": self.last_price,
+                # "training_info/volume": self.volume,
                 # "training_info/bias": self.bias[0],
                 # "training_info/macd_bar": self.macd_bar[-1],
                 # "training_info/boll_top": self.boll[0],
@@ -277,7 +285,8 @@ class FuturesEnvV3_1(gym.Env):
             }
         # self.last_commision = self.account.commission
         if self.wandb:
-            wandb.log(self.info)
+            # wandb.log(self.info)
+            pass
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)

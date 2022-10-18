@@ -40,6 +40,13 @@ class Interval(Enum):
     ONE_DAY = "1d"
     TICK = "tick"
 
+class MaxStepByDay(Enum):
+    ONE_SEC = 13500
+    FIVE_SEC = 4320
+    ONE_MIN = 360
+    FIVE_MIN = 72
+    FIFTEEN_MIN = 24
+
 
 
 SETTINGS = get_config()

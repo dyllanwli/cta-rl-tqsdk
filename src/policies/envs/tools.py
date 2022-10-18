@@ -1,6 +1,7 @@
+from random import sample
 from typing import Dict, List
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from collections import defaultdict, deque
 import numpy as np
@@ -148,8 +149,8 @@ class DataLoader:
         self.config = config
         self.is_random_sample = config.is_random_sample
 
-        self.start_dt = self.config.start_dt
-        self.end_dt = self.config.end_dt
+        self.start_dt = datetime.combine(self.config.start_dt, datetime.min.time())
+        self.end_dt = datetime.combine(self.config.end_dt , datetime.max.time())
         self.mongo = MongoDAO()
 
     def get_api(self) -> TqApi:
@@ -158,20 +159,21 @@ class DataLoader:
 
     def get_offline_data(self, interval: Interval, instrument_id: str, offset_bar_length: int) -> pd.DataFrame:
         if self.is_random_sample:
-            offset = self.config.max_steps + offset_bar_length + 100
-            start_dt = datetime.combine(self.start_dt, datetime.min.time())
-            end_dt = datetime.combine(self.end_dt, datetime.max.time())
+            offset = self.config.max_steps + offset_bar_length + 25300 # extend for 7 hours
+            
 
-            low_dt = time_to_s_timestamp(start_dt)
-            high_dt = time_to_s_timestamp(end_dt) - offset
+            low_dt = time_to_s_timestamp(self.start_dt)
+            high_dt = time_to_s_timestamp(self.end_dt) - offset
 
             sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
-            sample_start_dt = time_to_datetime(sample_start).date()
+            start_dt: datetime = time_to_datetime(sample_start)
+            # add 7 hours
+            start_dt = start_dt + timedelta(hours=7)
             # print("dataloader: Loading random offline data from ", sample_start_dt)
             while True:
                 try:
                     df = self.mongo.load_bar_data(
-                        instrument_id, sample_start_dt, self.end_dt, interval, limit=offset)
+                        instrument_id, start_dt, self.end_dt, interval, limit=offset)
                     # print("dataloader: random offline data loaded, shape: ", df.shape)
                     break
                 except Exception as e:
