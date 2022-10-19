@@ -31,13 +31,4 @@ from gym import spaces
 
 # if observation.contains(state):
 #     print("yes")
-from typing import NamedTuple
 
-class InitOverallStep(NamedTuple):
-    ONE_SEC: int = 2*60*60
-    FIVE_SEC: int = 2*60*12
-    ONE_MIN: int = 2*60
-
-init_over_step = InitOverallStep()
-
-print(InitOverallStep.ONE_SEC)

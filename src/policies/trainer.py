@@ -32,7 +32,7 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2021, 11, 3),
+            end_dt=date(2022, 1, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
@@ -59,7 +59,7 @@ class RLTrainer:
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
                                run_config=air.RunConfig(
-                                    verbose=2,
+                                    verbose=1,
                                     stop=stop,
                                     checkpoint_config=air.CheckpointConfig(
                                         checkpoint_frequency=100),

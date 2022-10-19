@@ -1,7 +1,6 @@
-from datetime import datetime
-import logging
 import numpy as np
 from copy import deepcopy
+import pytz
 
 import pandas as pd
 
@@ -89,7 +88,7 @@ class FuturesEnvV3_1(gym.Env):
             # self.interval_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_1], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
-            "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64),
+            "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
             "kdj": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
         })
 
@@ -97,7 +96,7 @@ class FuturesEnvV3_1(gym.Env):
         # get offline data from db
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
             interval=self.interval_1, instrument_id=self.symbol, offset_bar_length=self.bar_length)
-        self.overall_steps = self.init_step_1
+        self.overall_steps = 100
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -143,7 +142,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.is_offline:
             # offline state0
             self.bar_1 = self.offline_data.iloc[self.overall_steps:
-                                                self.overall_steps+self.bar_length]
+                                                self.overall_steps+self.init_step_1]
             self.last_price = self.bar_1.iloc[-1]['close']
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
@@ -165,14 +164,15 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = 100 
-        factor_input = self.bar_1.iloc[-self.factor_length+offset:]
+        offset = self.factor_length + 200 
+        assert offset <= self.init_step_1
+        factor_input = self.bar_1.iloc[-offset:]
 
         # normalize the data
         # normalized_state_1 = self.factors.normalize(state_1)
         # normalized_factor_input = self.factors.normalize(factor_input)
 
-        datetime_state = time_to_datetime(self.last_datatime)
+        datetime_state = time_to_datetime(self.last_datatime).astimezone(pytz.timezone('Asia/Shanghai'))
 
         # calculate factors
         self.bias = np.array(self.factors.bias(
@@ -209,7 +209,6 @@ class FuturesEnvV3_1(gym.Env):
         """
         Reset the state if a new day is detected.
         """
-        # print("env: Resetting")
         self.done = False
         self.steps = 0
         self.last_action = 0  # last target position volume
@@ -223,7 +222,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.is_random_sample:
             self._set_offline_data()
         state = self._get_state()
-        # self.log_info()
+        # print("env: Reset done, datetime: ", state['datetime'])
         return state
 
     def step(self, action):

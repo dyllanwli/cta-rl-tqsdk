@@ -43,7 +43,7 @@ class EnvConfig:
         self.trade_position_ratio_limit: float = 0.9
 
         INTERVAL = Interval()
-        INIT_STEP = InitOverallStep()
+        # INIT_STEP = InitOverallStep()
         MAXSTEP = MaxStepByDay()
 
         self.data_length: Dict[str, int] = {
@@ -59,7 +59,7 @@ class EnvConfig:
         }
         # subscribed interval
         self.interval_1: str = INTERVAL.ONE_MIN
-        self.init_step_1: int = 120 # 2 hours
+        self.init_step_1: int = 300
 
         # dataloader settings
         self.max_steps: int = MAXSTEP.ONE_MIN * 3 # max actions per episode

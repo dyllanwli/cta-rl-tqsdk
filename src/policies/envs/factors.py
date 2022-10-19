@@ -31,8 +31,13 @@ class Factors:
     def boll(self, df: pd.DataFrame, n: int = 26, p: int = 5):
         boll = BOLL(df, n, p)
         boll_top = boll["top"].iloc[-1]
+        boll_mid = boll["mid"].iloc[-1]
         boll_bottom = boll["bottom"].iloc[-1]
-        return [boll_top, boll_bottom]
+        return [
+            boll_top if not np.isnan(boll_top) else 0, 
+            boll_mid if not np.isnan(boll_mid) else 0,
+            boll_bottom if not np.isnan(boll_bottom) else 0
+        ]
     
     def bias(self, df: pd.DataFrame, n: int = 6):
         bias = BIAS(df, n)["bias"].iloc[-1]

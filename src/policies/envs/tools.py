@@ -1,5 +1,4 @@
-from random import sample
-from typing import Dict, List
+from typing import Dict, List, NamedTuple
 import logging
 from datetime import datetime, timedelta
 import time
@@ -129,6 +128,8 @@ class SimpleTargetPosTaskOffline:
         return profit
 
 
+
+
 class DataLoader:
     def __init__(self, config: EnvConfig):
         self.config = config
@@ -137,6 +138,11 @@ class DataLoader:
         self.start_dt = datetime.combine(self.config.start_dt, datetime.min.time())
         self.end_dt = datetime.combine(self.config.end_dt , datetime.max.time())
         self.mongo = MongoDAO()
+        self.interval_offset = {
+            "1s": 3600,
+            "5s": 720,
+            "1m": 60,
+        }
 
     def get_api(self) -> TqApi:
         return self._set_account(
@@ -145,7 +151,7 @@ class DataLoader:
     def get_offline_data(self, interval: str, instrument_id: str, offset_bar_length: int) -> pd.DataFrame:
         if self.is_random_sample:
             while True:
-                offset = self.config.max_steps + offset_bar_length + 25300 # extend for 7 hours
+                offset = self.config.max_steps + offset_bar_length + 200# + self.interval_offset[interval] * 7 # extend for 7 hours
                 low_dt = time_to_s_timestamp(self.start_dt)
                 high_dt = time_to_s_timestamp(self.end_dt) - offset
 
@@ -153,7 +159,7 @@ class DataLoader:
                 start_dt: datetime = time_to_datetime(sample_start).date()
                 start_dt = datetime.combine(start_dt, datetime.min.time())
                 # add 7 hours
-                start_dt = start_dt + timedelta(hours=7)
+                # start_dt = start_dt + timedelta(hours=7)
                 # print("dataloader: Loading random offline data from ", sample_start_dt)
                 try:
                     df = self.mongo.load_bar_data(
