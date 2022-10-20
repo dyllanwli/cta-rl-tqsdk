@@ -265,7 +265,7 @@ class FuturesEnvV3_1(gym.Env):
                 # "training_info/time": time_to_s_timestamp(self.last_datatime),
                 "training_info/last_action": self.last_action,
                 # "training_info/profit": self.profit,
-                # "training_info/close_price": self.last_price,
+                "training_info/last_price": self.last_price,
                 # "training_info/volume": self.volume,
                 # "training_info/bias": self.bias[0],
                 # "training_info/macd_bar": self.macd_bar[-1],
@@ -293,7 +293,7 @@ class FuturesEnvV3_1(gym.Env):
                 "backtest_info/commision_change": self.account.commission - self.last_commision,
                 "backtest_info/last_action": self.last_action,
                 "backtest_info/profit": self.profit,
-                "backtest_info/close_price": self.instrument_quote.last_price,
+                "backtest_info/last_price": self.instrument_quote.last_price,
                 "backtest_info/volume": self.instrument_quote.volume,
             }
         # self.last_commision = self.account.commission

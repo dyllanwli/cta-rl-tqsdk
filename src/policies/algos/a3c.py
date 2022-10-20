@@ -25,15 +25,17 @@ class A3CConfig:
             "lr": 1e-05,
             # "lr_schedule": [[0, 1e-05], [100, 5e-05]],
             "vf_loss_coeff": tune.grid_search([0.5]) if is_tune else 0.5,
-            # "entropy_coeff": tune.grid_search([0.001, 0.0001]) if is_tune else 0.01,
+            "entropy_coeff": tune.grid_search([0.001, 0.0001]) if is_tune else 0.01,
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {
-                "fcnet_hiddens": tune.grid_search([[256, 256, 256], [256, 256], [128,128], [128,128,128], [512, 512]]) if is_tune else [256, 256, 256],
+                "fcnet_hiddens": tune.grid_search([
+                    [256, 256, 256]
+                ]) if is_tune else [256, 256, 256],
                 "fcnet_activation": "relu",
-                "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": 100,
-                "lstm_cell_size": tune.grid_search([128, 256, 512]) if is_tune else 256,
+                "use_lstm": tune.grid_search([True, False]) if is_tune else False, # use LSTM or use attention
+                "max_seq_len": 50,
+                "lstm_cell_size": tune.grid_search([64]) if is_tune else 256,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": False,
                 "_time_major": True,

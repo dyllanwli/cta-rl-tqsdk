@@ -18,7 +18,7 @@ from utils import Interval, MaxStepByDay
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "tune"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train

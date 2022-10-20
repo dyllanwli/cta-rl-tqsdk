@@ -10,7 +10,7 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a3')
+    tqAPI = API(account='a4')
     dao = MongoDAO()
     # dao.download_data(tqAPI.auth, ['cotton', 'methanol'], date(2016, 10, 25), date(2022, 2, 1))
     # dao.download_data(tqAPI.auth, ['rebar'], date(2016, 10, 25), date(2022, 2, 1))
@@ -18,7 +18,7 @@ def main():
     # symbol_list = ['soybean_oil']
     intervals = {'5s', '1d'}
     symbol_list = ['cotton', "soybean"]
-    dao.download_data(tqAPI.auth, symbol_list, date(2021, 3, 30), date(2022, 9, 1), intervals)
+    dao.download_data(tqAPI.auth, symbol_list, date(2022, 1, 5), date(2022, 9, 1), intervals)
     print(symbol_list, intervals, "downloaded")
 if __name__ == "__main__":
     main()
