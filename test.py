@@ -1,4 +1,5 @@
 from collections import deque
+from copy import deepcopy
 import pandas as pd
 from datetime import date, datetime
 
@@ -104,7 +105,28 @@ from gym import spaces
 
 # dt = time_to_datetime(sample_start)
 # print(dt)
-OHLCV = ['open', 'high', 'low', 'close', 'volume']
+
+normalized_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+raw_cols = ["raw_open", "raw_high", "raw_low", "raw_close", "raw_volume", "raw_open_oi", "raw_close_oi"]
 df = pd.read_csv('test.csv')
-df = df.iloc[:,2:][OHLCV].iloc[-1].to_numpy(dtype=np.float64)
+df = df.iloc[-5:]
+print(df)
+
+
+
+
+def min_max_normalize(x):
+    # normalize data by column
+    if isinstance(x, np.ndarray):
+        min_val = np.min(x, axis=0)
+        max_val = np.max(x, axis=0)
+        normalized = (x - min_val) / (max_val - min_val)
+        return np.nan_to_num(normalized, nan=0)
+    elif isinstance(x, pd.DataFrame):
+        d = deepcopy(x)
+        d[raw_cols] = d[normalized_cols]
+        d[normalized_cols] = d[normalized_cols].apply(lambda y: (y - np.min(y)) / (np.max(y) - np.min(y)), axis=0)
+        return d.fillna(0)
+
+df = min_max_normalize(df)
 print(df)

@@ -81,8 +81,9 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float64),
+            "OHLCV": spaces.Box(low=0, high=1, shape=(5,), dtype=np.float64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
+            "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
             # self.interval: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
@@ -97,6 +98,7 @@ class FuturesEnvV3_1(gym.Env):
         offset = self.bar_length + self.bar_start_step + self.max_steps + 10
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
             interval=self.interval, instrument_id=self.symbol, offset=offset)
+        self.offline_data = self.factors.min_max_normalize(self.offline_data)
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -143,8 +145,8 @@ class FuturesEnvV3_1(gym.Env):
             # offline state0
             self.bar_1 = self.offline_data.iloc[self.bar_start_step:
                                                 self.bar_start_step+self.bar_length]
-            self.last_price = self.bar_1.iloc[-1]['close']
-            self.volume = self.bar_1.iloc[-1]['volume']
+            self.last_price = self.bar_1.iloc[-1]['r_close']
+            self.volume = self.bar_1.iloc[-1]['r_volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
             state_1 = self.bar_1[self.OHLCV].iloc[-1].to_numpy(
@@ -167,10 +169,6 @@ class FuturesEnvV3_1(gym.Env):
         offset = 100  # setup an offset so we can caculate the factors; factor's input must be less than offset
         assert self.factor_length + offset < self.bar_length
         factor_input = self.bar_1.iloc[-(self.factor_length + offset):]
-
-        # normalize the data
-        # normalized_state_1 = self.factors.normalize(state_1)
-        # normalized_factor_input = self.factors.normalize(factor_input)
 
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
@@ -197,6 +195,7 @@ class FuturesEnvV3_1(gym.Env):
         state = dict({
             "OHLCV": state_1,
             "last_price": np.array([self.last_price], dtype=np.float64),
+            "volume": np.array([self.volume], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
             "bias": self.bias,
             "macd_bar": self.macd_bar,
