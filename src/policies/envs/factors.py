@@ -18,7 +18,6 @@ class Factors:
                 d[col] = (d[col] - x[col].min()) / (x[col].max() - x[col].min())
             return d
 
-
     def macd_bar(self, df: pd.DataFrame, short: int = 30, long: int = 60, m: int = 20):
         macd = list(MACD(df, short, long, m)["bar"])
         return macd
@@ -33,11 +32,7 @@ class Factors:
         boll_top = boll["top"].iloc[-1]
         boll_mid = boll["mid"].iloc[-1]
         boll_bottom = boll["bottom"].iloc[-1]
-        return [
-            boll_top if not np.isnan(boll_top) else 0, 
-            boll_mid if not np.isnan(boll_mid) else 0,
-            boll_bottom if not np.isnan(boll_bottom) else 0
-        ]
+        return [boll_top, boll_mid, boll_bottom]
     
     def bias(self, df: pd.DataFrame, n: int = 6):
         bias = BIAS(df, n)["bias"].iloc[-1]

@@ -9,7 +9,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 from .constant import EnvConfig
-from .tools import DataLoader, get_symbols_by_names, TargetPosTaskOffline, SimpleTargetPosTaskOffline
+from .tools import DataLoader, get_symbols_by_names, TargetPosTaskOffline
 from .factors import Factors
 
 import wandb
@@ -40,7 +40,7 @@ class FuturesEnvV3_1(gym.Env):
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
             wandb.init(project=config.project_name,
-                       name=self.wandb, group="train")
+                       name=self.wandb, group="train_" + config.interval)
 
         self._skip_env_checking = True
         self._set_config(config)
@@ -55,15 +55,15 @@ class FuturesEnvV3_1(gym.Env):
         self.is_random_sample = config.is_random_sample
         self.dataloader = DataLoader(config)
         self.symbol = get_symbols_by_names(config)[0]
+        self.max_steps = config.max_steps
 
         # Trading config
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.factors = Factors()
         self.factor_length = 20
-        self.target_pos_task = SimpleTargetPosTaskOffline() if self.is_offline else None
+        self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.interval_1: str = config.interval_1
-        self.init_step_1: int  = config.init_step_1
+        self.interval: str = config.interval
         self.bar_length: int = 300  # subscribed bar length
         if self.is_offline:
             self._set_offline_data()
@@ -72,7 +72,6 @@ class FuturesEnvV3_1(gym.Env):
 
         # RL config
         self.action_space_type = config.action_space_type
-        self.max_steps = config.max_steps
         self.max_action = config.max_volume
         if self.action_space_type == "discrete":
             self.action_space: spaces.Discrete = spaces.Discrete(
@@ -82,10 +81,10 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "close_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
+            "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float64),
+            "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
-            # self.interval_1: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval_1], 5), dtype=np.float64),
+            # self.interval: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
             "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
             "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
@@ -94,9 +93,10 @@ class FuturesEnvV3_1(gym.Env):
 
     def _set_offline_data(self):
         # get offline data from db
+        self.bar_start_step = 0
+        offset = self.bar_length + self.bar_start_step + self.max_steps + 10
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
-            interval=self.interval_1, instrument_id=self.symbol, offset_bar_length=self.bar_length)
-        self.overall_steps = 100
+            interval=self.interval, instrument_id=self.symbol, offset=offset)
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -130,7 +130,7 @@ class FuturesEnvV3_1(gym.Env):
     def _reward_function(self):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1] using tanh
-        hold_penalty = 0.001
+        hold_penalty = 0.0001
         reward = np.tanh((self.profit - hold_penalty)/100)
         self.accumulated_profit += self.profit
         self.accumulated_reward += reward
@@ -141,21 +141,20 @@ class FuturesEnvV3_1(gym.Env):
     def _get_state(self):
         if self.is_offline:
             # offline state0
-            self.bar_1 = self.offline_data.iloc[self.overall_steps:
-                                                self.overall_steps+self.init_step_1]
+            self.bar_1 = self.offline_data.iloc[self.bar_start_step:
+                                                self.bar_start_step+self.bar_length]
             self.last_price = self.bar_1.iloc[-1]['close']
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
-            self.overall_steps += 1
 
-            state_1 = self.bar_1[self.OHLCV].iloc[
-                -self.data_length[self.interval_1]:].to_numpy(dtype=np.float64)
+            state_1 = self.bar_1[self.OHLCV].iloc[-1].to_numpy(
+                dtype=np.float64)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval_1]:].to_numpy(
+                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
@@ -164,15 +163,17 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
-        offset = self.factor_length + 200 
-        assert offset <= self.init_step_1
-        factor_input = self.bar_1.iloc[-offset:]
+
+        offset = 100  # setup an offset so we can caculate the factors; factor's input must be less than offset
+        assert self.factor_length + offset < self.bar_length
+        factor_input = self.bar_1.iloc[-(self.factor_length + offset):]
 
         # normalize the data
         # normalized_state_1 = self.factors.normalize(state_1)
         # normalized_factor_input = self.factors.normalize(factor_input)
 
-        datetime_state = time_to_datetime(self.last_datatime).astimezone(pytz.timezone('Asia/Shanghai'))
+        datetime_state = time_to_datetime(self.last_datatime).astimezone(
+            pytz.timezone('Asia/Shanghai'))
 
         # calculate factors
         self.bias = np.array(self.factors.bias(
@@ -188,16 +189,15 @@ class FuturesEnvV3_1(gym.Env):
         # self.macd_bar = np.nan_to_num(self.macd_bar, nan=np.nanmean(self.macd_bar))
         # self.kdj = np.nan_to_num(self.kdj, nan=0)
 
-        assert not np.isnan(self.bias).any()
-        assert not np.isnan(self.macd_bar).any()
-        assert not np.isnan(self.boll).any()
-        assert not np.isnan(self.kdj).any()
+        # assert not np.isnan(self.bias).any()
+        # assert not np.isnan(self.macd_bar).any()
+        # assert not np.isnan(self.boll).any()
+        # assert not np.isnan(self.kdj).any()
 
         state = dict({
-            "close_price": np.array([self.last_price], dtype=np.float64),
-            "volume": np.array([self.volume], dtype=np.float64),
+            "OHLCV": state_1,
+            "last_price": np.array([self.last_price], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            # self.interval_1: state_1,
             "bias": self.bias,
             "macd_bar": self.macd_bar,
             "boll": self.boll,
@@ -243,6 +243,7 @@ class FuturesEnvV3_1(gym.Env):
             state = self._get_state()
             self.reward = self._reward_function()
             self.steps += 1
+            self.bar_start_step += 1
             self._update_subscription()
             self.log_info()
             return state, self.reward, self.done, self.info
@@ -250,13 +251,13 @@ class FuturesEnvV3_1(gym.Env):
             print("env: Error in step, resetting position to 0. Action: ", action)
             self._set_target_volume(0)
             raise e
-            
+
     def log_epsoide_info(self):
         if self.wandb:
             wandb.log(
                 {"training_info/accumulated_profit": self.accumulated_profit,
                  "training_info/accumulated_reward": self.accumulated_reward,
-                 "training_info/action_count": self.action_count,})
+                 "training_info/action_count": self.action_count, })
 
     def log_info(self,):
         if self.is_offline:

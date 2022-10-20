@@ -4,12 +4,6 @@ from enum import Enum
 from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount, TqApi
 from utils import Interval, InitOverallStep
 
-class MaxStepByDay(NamedTuple):
-    ONE_SEC: int = 20700
-    FIVE_SEC: int = 4140
-    ONE_MIN: int = 345
-    FIVE_MIN: int = 72
-    FIFTEEN_MIN: int = 24
 
 class EnvConfig:
     # env config is a entity
@@ -24,6 +18,8 @@ class EnvConfig:
                  is_offline: bool = False,
                  is_random_sample: bool = False,
                  project_name: str = "futures-trading-4",
+                 interval: str = "1m",
+                 max_steps: int = 345,
                  ):
         self.auth: TqAuth = auth
         self.symbols: List[str] = symbols
@@ -44,7 +40,7 @@ class EnvConfig:
 
         INTERVAL = Interval()
         # INIT_STEP = InitOverallStep()
-        MAXSTEP = MaxStepByDay()
+        # MAXSTEP = MaxStepByDay()
 
         self.data_length: Dict[str, int] = {
             INTERVAL.ONE_SEC : 1,
@@ -58,11 +54,10 @@ class EnvConfig:
             INTERVAL.ONE_DAY : 1,
         }
         # subscribed interval
-        self.interval_1: str = INTERVAL.ONE_MIN
-        self.init_step_1: int = 300
+        self.interval: str = interval
 
         # dataloader settings
-        self.max_steps: int = MAXSTEP.ONE_MIN * 3 # max actions per episode
+        self.max_steps: int = max_steps # max actions per episode
         self.is_offline: bool = is_offline
         self.is_random_sample: bool = is_random_sample
         

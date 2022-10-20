@@ -13,6 +13,8 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
 
+from utils import Interval, MaxStepByDay
+
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
@@ -24,7 +26,11 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
-        self.project_name = "futures-trading-4"
+        self.project_name = "futures-trading-5"
+        INTERVAL = Interval()
+        MAXSTEP = MaxStepByDay()
+        self.interval = INTERVAL.ONE_MIN
+        self.max_steps = MAXSTEP.ONE_MIN
 
         # only trainer mode will log to wandb in env
         self.env_config = {"cfg": EnvConfig(
@@ -32,11 +38,13 @@ class RLTrainer:
             symbols=["cotton"],
             # symbols=["sliver"],
             start_dt=date(2016, 1, 1),
-            end_dt=date(2022, 1, 1),
+            end_dt=date(2022, 8, 1),
             wandb=self.wandb_name,
             is_offline=True,
             is_random_sample=True,
             project_name=self.project_name,
+            interval=self.interval,
+            max_steps=self.max_steps
         )}
         self.env = FuturesEnv
 
@@ -50,16 +58,16 @@ class RLTrainer:
             # use tuner
             stop = {
                 "training_iteration": 500,
-                "episode_reward_mean": 0.9,
+                "episode_reward_min": 0,
             }
             cb = [WandbLoggerCallback(
                 project=self.project_name,
-                group="tune",
+                group="tune_" + self.interval,
                 log_config=True,
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
                                run_config=air.RunConfig(
-                                    verbose=1,
+                                    # verbose=1,
                                     stop=stop,
                                     checkpoint_config=air.CheckpointConfig(
                                         checkpoint_frequency=100),
@@ -74,7 +82,7 @@ class RLTrainer:
             # use trainer
             trainer = algos.trainer
             print(algos.config)
-            for i in range(100000):
+            for i in range(10000):
                 result = trainer.train()
                 self.logging(result)
                 if i % 500 == 0:

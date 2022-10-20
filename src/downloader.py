@@ -14,9 +14,11 @@ def main():
     dao = MongoDAO()
     # dao.download_data(tqAPI.auth, ['cotton', 'methanol'], date(2016, 10, 25), date(2022, 2, 1))
     # dao.download_data(tqAPI.auth, ['rebar'], date(2016, 10, 25), date(2022, 2, 1))
-    intervals = {'1s', '5s', '1m', '1d'}
-    symbol_list = ['soybean_oil']
-    dao.download_data(tqAPI.auth, symbol_list, date(2016, 1, 1), date(2022, 9, 1), intervals)
+    # intervals = {'1s', '5s', '1m', '1d'}
+    # symbol_list = ['soybean_oil']
+    intervals = {'5s', '1d'}
+    symbol_list = ['cotton', "soybean"]
+    dao.download_data(tqAPI.auth, symbol_list, date(2021, 3, 30), date(2022, 9, 1), intervals)
     print(symbol_list, intervals, "downloaded")
 if __name__ == "__main__":
     main()
