@@ -18,7 +18,7 @@ from utils import Interval, MaxStepByDay
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
@@ -26,7 +26,7 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
-        self.project_name = "futures-trading-5"
+        self.project_name = "futures-trading-6"
         INTERVAL = Interval()
         MAXSTEP = MaxStepByDay()
         self.interval = INTERVAL.ONE_MIN
@@ -48,7 +48,7 @@ class RLTrainer:
         )}
         self.env = FuturesEnv
 
-        ray.init(logging_level=logging.INFO, num_cpus=60, num_gpus=1)
+        ray.init(logging_level=logging.INFO, num_cpus=62, num_gpus=1)
 
     def train(self,):
         is_tune = self.train_type == "tune"
@@ -57,7 +57,7 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 500,
+                "training_iteration": 400,
                 "episode_reward_min": 0,
             }
             cb = [WandbLoggerCallback(
