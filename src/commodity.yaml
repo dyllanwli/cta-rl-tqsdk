@@ -16,6 +16,7 @@ commodity:
   sliver: SHFE.ag # 沪银
   copper: SHFE.cu # 沪铜
   curd_oil: SHFE.sc # 原油
+  fuel_oil: SHFE.fu # 燃油 | 2018
 
   styrene: DCE.eb # 苯乙烯
   bean_2: DCE.b # 豆二

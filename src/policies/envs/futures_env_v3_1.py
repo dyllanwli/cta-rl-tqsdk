@@ -59,6 +59,7 @@ class FuturesEnvV3_1(gym.Env):
 
         # Trading config
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
+        self.n_OHLCV = ["n_" + i for i in self.OHLCV]
         self.factors = Factors()
         self.factor_length = 20
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
@@ -83,7 +84,6 @@ class FuturesEnvV3_1(gym.Env):
         self.observation_space: spaces.Dict = spaces.Dict({
             "OHLCV": spaces.Box(low=0, high=1, shape=(5,), dtype=np.float64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            "volume": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
             # self.interval: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval], 5), dtype=np.float64),
             "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
@@ -145,11 +145,11 @@ class FuturesEnvV3_1(gym.Env):
             # offline state0
             self.bar_1 = self.offline_data.iloc[self.bar_start_step:
                                                 self.bar_start_step+self.bar_length]
-            self.last_price = self.bar_1.iloc[-1]['r_close']
-            self.volume = self.bar_1.iloc[-1]['r_volume']
+            self.last_price = self.bar_1.iloc[-1]['close']
+            self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
-            state_1 = self.bar_1[self.OHLCV].iloc[-1].to_numpy(
+            state_1 = self.bar_1[self.n_OHLCV].iloc[-1].to_numpy(
                 dtype=np.float64)
         else:
             # online state
@@ -166,22 +166,18 @@ class FuturesEnvV3_1(gym.Env):
                     else:
                         break
 
-        offset = 100  # setup an offset so we can caculate the factors; factor's input must be less than offset
-        assert self.factor_length + offset < self.bar_length
-        factor_input = self.bar_1.iloc[-(self.factor_length + offset):]
-
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
 
         # calculate factors
         self.bias = np.array(self.factors.bias(
-            factor_input, n=7), dtype=np.float64)
+            self.bar_1, n=7), dtype=np.float64)
         self.macd_bar = np.array(self.factors.macd_bar(
-            factor_input, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
-        self.boll = np.array(self.factors.boll(
-            factor_input, n=26, p=5), dtype=np.float64)
+            self.bar_1, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
+        self.boll = np.array(self.factors.boll_residual(
+            self.bar_1, n=26, p=5, price = self.last_price), dtype=np.float64)
         self.kdj = np.array(self.factors.kdj(
-            factor_input, n=9, m1=3, m2=3), dtype=np.float64)
+            self.bar_1, n=9, m1=3, m2=3), dtype=np.float64)
 
         # deal with the np.NaN
         # self.macd_bar = np.nan_to_num(self.macd_bar, nan=np.nanmean(self.macd_bar))
@@ -195,7 +191,6 @@ class FuturesEnvV3_1(gym.Env):
         state = dict({
             "OHLCV": state_1,
             "last_price": np.array([self.last_price], dtype=np.float64),
-            "volume": np.array([self.volume], dtype=np.float64),
             "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
             "bias": self.bias,
             "macd_bar": self.macd_bar,
@@ -265,11 +260,12 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_action": self.last_action,
                 # "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
-                # "training_info/volume": self.volume,
-                # "training_info/bias": self.bias[0],
-                # "training_info/macd_bar": self.macd_bar[-1],
+                "training_info/bias": self.bias[0],
+                "training_info/macd_bar": self.macd_bar[-1],
                 # "training_info/boll_top": self.boll[0],
-                # "training_info/boll_bottom": self.boll[1],
+                "training_info/boll_mid": self.boll[1],
+                # "training_info/boll_bottom": self.boll[2],
+                "training_info/kdj": self.kdj[0],
             }
         else:
             self.info = {

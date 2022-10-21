@@ -100,13 +100,13 @@ class RLTrainer:
         env = gym.make(self.env, config=self.env_config)
         obs = env.reset()
 
-        num_episodes = 0
-        while num_episodes < max_episodes:
+        step = 0
+        while step < max_episodes:
             action = trainer.compute_single_action(obs)
             obs, reward, done, info = env.step(action)
             info["reward"] = reward
             if done:
-                num_episodes += 1
+                step += 1
                 obs = env.reset()
         ray.shutdown()
 

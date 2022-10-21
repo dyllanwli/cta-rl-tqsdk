@@ -4,8 +4,18 @@ from copy import deepcopy
 
 class Factors:
     def __init__(self):
-        self.n_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
-        self.r_cols = ["r_open", "r_high", "r_low", "r_close", "r_volume", "r_open_oi", "r_close_oi"]
+        self.r_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+        self.n_cols = ["n_open", "n_high", "n_low", "n_close", "n_volume", "n_open_oi", "n_close_oi"]
+    
+    def mean_normalize(self, x):
+        if isinstance(x, np.ndarray):
+            mean = np.mean(x, axis=0)
+            normalized = x / mean
+            return np.nan_to_num(normalized, nan=0)
+        elif isinstance(x, pd.DataFrame):
+            d = deepcopy(x)
+            d[self.n_cols] = d[self.r_cols].apply(lambda y: y - np.mean(y), axis=0)
+            return d.fillna(0)
     
     def mean_residual_normalize(self, x):
         if isinstance(x, np.ndarray):
@@ -15,8 +25,7 @@ class Factors:
             return np.nan_to_num(normalized, nan=0)
         elif isinstance(x, pd.DataFrame):
             d = deepcopy(x)
-            d[self.r_cols] = d[self.n_cols]
-            d[self.n_cols] = d[self.n_cols].apply(lambda y: (y - np.mean(y)) / np.std(y), axis=0)
+            d[self.n_cols] = d[self.r_cols].apply(lambda y: (y - np.mean(y)) / np.std(y), axis=0)
             return d.fillna(0)
 
     def min_max_normalize(self, x):
@@ -28,8 +37,7 @@ class Factors:
             return np.nan_to_num(normalized, nan=0)
         elif isinstance(x, pd.DataFrame):
             d = deepcopy(x)
-            d[self.r_cols] = d[self.n_cols]
-            d[self.n_cols] = d[self.n_cols].apply(lambda y: (y - np.min(y)) / (np.max(y) - np.min(y)), axis=0)
+            d[self.n_cols] = d[self.r_cols].apply(lambda y: (y - np.min(y)) / (np.max(y) - np.min(y)), axis=0)
             return d.fillna(0)
 
     def macd_bar(self, df: pd.DataFrame, short: int = 30, long: int = 60, m: int = 20):
@@ -41,12 +49,12 @@ class Factors:
         # to deal with shift
         return [0] if np.isnan(rsi) else [rsi]
     
-    def boll(self, df: pd.DataFrame, n: int = 26, p: int = 5):
+    def boll_residual(self, df: pd.DataFrame, n: int = 26, p: int = 5, price: float = 0.0):
         boll = BOLL(df, n, p)
         boll_top = boll["top"].iloc[-1]
         boll_mid = boll["mid"].iloc[-1]
         boll_bottom = boll["bottom"].iloc[-1]
-        return [boll_top, boll_mid, boll_bottom]
+        return [boll_top - price, boll_mid - price, boll_bottom - price]
     
     def bias(self, df: pd.DataFrame, n: int = 6):
         bias = BIAS(df, n)["bias"].iloc[-1]

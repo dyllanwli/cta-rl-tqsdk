@@ -31,7 +31,7 @@ class A3CConfig:
             "model": {
                 "fcnet_hiddens": tune.grid_search([
                     [256, 256, 256]
-                ]) if is_tune else [256, 256, 256],
+                ]) if is_tune else [256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": tune.grid_search([True, False]) if is_tune else False, # use LSTM or use attention
                 "max_seq_len": 50,
@@ -40,7 +40,7 @@ class A3CConfig:
                 "lstm_use_prev_reward": False,
                 "_time_major": True,
                 # attention
-                "use_attention": False,
+                "use_attention": True,
                 "attention_num_transformer_units": 1,
                 "attention_dim": 64,
                 "attention_memory_inference": 10,

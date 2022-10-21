@@ -7,13 +7,14 @@ class PPOConfig:
     def __init__(self, env: gym.Env, env_config, is_tune: bool):
         self.env = env
         self.config = {
+            # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": 1,
+            "num_workers": 8 if is_tune else 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
-            "num_gpus": 1,
-            "framework": "tf",
+            "num_gpus": 0 if is_tune else 1,
+            "framework": "torch",
             "horizon": 14400,  # horizon need to be set
             "use_gae": True,
             "clip_param": 0.3,
@@ -23,9 +24,9 @@ class PPOConfig:
             # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
             "vf_loss_coeff": 0.5,
             "model": {
-                "fcnet_hiddens": [256, 256, 256],
+                "fcnet_hiddens": [512, 512, 512],
                 "fcnet_activation": "relu",
-                "use_lstm": True, # use LSTM or use attention
+                "use_lstm": False, # use LSTM or use attention
                 "max_seq_len": 100,
                 "lstm_cell_size": 512,
                 "lstm_use_prev_action": True,
