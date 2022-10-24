@@ -29,8 +29,8 @@ class RLTrainer:
         self.project_name = "futures-alpha-6"
         INTERVAL = Interval()
         MAXSTEP = MaxStepByDay()
-        self.interval = INTERVAL.ONE_MIN
-        self.max_steps = MAXSTEP.ONE_MIN
+        self.interval = INTERVAL.FIVE_SEC
+        self.max_steps = MAXSTEP.FIVE_SEC
         self.training_iteration = dict({
             INTERVAL.ONE_MIN: 100,
             INTERVAL.FIVE_SEC: 400,
@@ -48,7 +48,8 @@ class RLTrainer:
             is_random_sample=True,
             project_name=self.project_name,
             interval=self.interval,
-            max_steps=self.max_steps
+            max_steps=self.max_steps,
+            high_freq=True,
         )}
         self.env = FuturesEnv
 

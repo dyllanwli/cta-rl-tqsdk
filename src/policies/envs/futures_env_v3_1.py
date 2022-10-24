@@ -48,6 +48,9 @@ class FuturesEnvV3_1(gym.Env):
         self.reset()
 
     def _set_config(self, config: EnvConfig):
+        """
+        Set config for the environment. Only called once in __init__.
+        """
         # Subscribe instrument quote
         print("env: Setting config")
         # data config
@@ -55,13 +58,14 @@ class FuturesEnvV3_1(gym.Env):
         self.is_random_sample = config.is_random_sample
         self.dataloader = DataLoader(config)
         self.symbol = get_symbols_by_names(config)[0]
+        self.high_freq = config.high_freq
         self.max_steps = config.max_steps
 
         # Trading config
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
-        self.data_length = config.data_length  # data length for observation
         self.interval: str = config.interval # interval for OHLCV
         self.bar_length: int = 300  # subscribed bar length
+        self.ohlcv_length: int = config.data_length[self.interval]   # OHLCV length
         self.factor_length = 20
 
         # RL config
@@ -75,7 +79,12 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int32)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float32),
+            "open": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "high": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "low": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "close": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "volume": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "last_action": spaces.Box(low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int32),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
             # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
@@ -88,6 +97,7 @@ class FuturesEnvV3_1(gym.Env):
             self._set_offline_data()
         else:
             self._set_api_data()
+        self.accumulated_profit = 0
 
     def _set_offline_data(self):
         # get offline data from db
@@ -133,8 +143,8 @@ class FuturesEnvV3_1(gym.Env):
         reward = np.tanh((self.profit - hold_penalty)/100)
         self.accumulated_profit += self.profit
         self.accumulated_reward += reward
-        if self.profit != 0:
-            self.action_count += 1
+        if self.profit == 0:
+            self.holded_steps += 1
         return reward
 
     def _get_state(self):
@@ -149,14 +159,14 @@ class FuturesEnvV3_1(gym.Env):
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
-            ohlcv = self.bar_1[self.factors.OHLCV].iloc[-1].to_numpy(
+            ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.ohlcv_length:].to_numpy(
                 dtype=np.float32)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.data_length[self.interval]:].to_numpy(
+                    ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.ohlcv_length:].to_numpy(
                         dtype=np.float32)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
@@ -169,12 +179,26 @@ class FuturesEnvV3_1(gym.Env):
         state = dict()
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
-        state["OHLCV"] = ohlcv
+        state['last_action'] = np.array([self.last_action], dtype=np.int32)
         state["last_price"] = np.array([self.last_price], dtype=np.float32)
         state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int32)
+
+        ohlcv_state = self.factors.set_ohlcv_state(ohlcv) 
+        state.update(ohlcv_state)
         factors_state, self.factors_info = self.factors.set_state_factors(bar_data=self.bar_1, last_price=self.last_price)
         state.update(factors_state)
         return state
+    
+    def _preprocess_action(self, action):
+        assert self.action_space.contains(action)
+        if self.action_space_type == "discrete":
+            action = int(action) - 1
+        else:
+            action = int(action[0])
+        if self.high_freq and action == 0 and self.profit != 0:
+            # end episode if all postiions are closed
+            self.done = True
+        return action
 
 
     def reset(self):
@@ -183,38 +207,32 @@ class FuturesEnvV3_1(gym.Env):
         """
         self.done = False
         self.steps = 0
-        self.last_action = 0  # last target position volume
+        self.last_action = 0
         self.last_commision = 0
 
         self.reward = 0
 
-        self.accumulated_profit = 0
         self.accumulated_reward = 0
 
         self.profit = 0
         self.commission = 0
 
-        self.action_count = 0
+        self.holded_steps = 0
         self._update_subscription()
         if self.is_random_sample:
             self._set_offline_data()
         state = self._get_state()
-        # print("env: Reset done, datetime: ", state['datetime'])
         return state
 
     def step(self, action):
         try:
-            assert self.action_space.contains(action)
-            if self.action_space_type == "discrete":
-                action = int(action) - 1
-            else:
-                action = int(action[0])
             if self.steps >= self.max_steps:
                 self.done = True
                 self.log_epsoide_info()
                 self._set_target_volume(0)
                 self.last_action = 0
             else:
+                action = self._preprocess_action(action)
                 self._set_target_volume(action)
                 self.last_action = action
             state = self._get_state()
@@ -229,12 +247,13 @@ class FuturesEnvV3_1(gym.Env):
             self._set_target_volume(0)
             raise e
 
+    ##### Logging functions #####
     def log_epsoide_info(self):
         if self.wandb:
             wandb.log(
                 {"training_info/accumulated_profit": self.accumulated_profit,
                  "training_info/accumulated_reward": self.accumulated_reward,
-                 "training_info/action_count": self.action_count, })
+                 "training_info/holded_steps": self.holded_steps, })
 
     def log_info(self,):
         if self.wandb:

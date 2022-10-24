@@ -1,4 +1,3 @@
-from typing import Dict, List, NamedTuple
 import logging
 from datetime import datetime, timedelta
 import time
@@ -10,7 +9,7 @@ import logging
 from .constant import EnvConfig
 
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
-from tqsdk.objs import Account, Quote
+# from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 from commodity import Commodity
 from .constant import EnvConfig
@@ -21,9 +20,8 @@ def get_symbols_by_names(config: EnvConfig):
     # get instrument symbols
     cmod = Commodity()
     return [cmod.get_instrument_name(name) for name in config.symbols]
-
 class TargetPosTaskOffline:
-    def __init__(self, commission: float = 5.0, verbose: int = 1):
+    def __init__(self, commission: float = 6.0, verbose: int = 1):
         self.last_volume = 0
         self.positions = deque([])
         self.commission = commission
@@ -159,7 +157,7 @@ class DataLoader:
 
             return df
         else:
-            print("dataloader: Loading offline data...")
+            print("dataloader: Loading all offline data...")
             df = self.mongo.load_bar_data(
                 instrument_id, self.start_dt, self.end_dt, interval)
             return df
