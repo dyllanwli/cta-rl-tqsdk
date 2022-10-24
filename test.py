@@ -106,10 +106,17 @@ from gym import spaces
 # dt = time_to_datetime(sample_start)
 # print(dt)
 
-normalized_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
-raw_cols = ["raw_open", "raw_high", "raw_low", "raw_close", "raw_volume", "raw_open_oi", "raw_close_oi"]
-df = pd.read_csv('test.csv')
-df = df.iloc[-5:]
-print(df)
+# normalized_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+# raw_cols = ["raw_open", "raw_high", "raw_low", "raw_close", "raw_volume", "raw_open_oi", "raw_close_oi"]
+# df = pd.read_csv('test.csv')
+# df = df.iloc[-5:]
+# print(df)
 
 
+info = {
+    "name": "test",
+    "start_date": "2021-01-01",
+}
+
+info.update({"end_date": "2021-01-02"})
+print(info)

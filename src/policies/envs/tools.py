@@ -39,6 +39,7 @@ class TargetPosTaskOffline:
 
     def set_target_volume(self, volume, price: float):
         profit = 0
+        commission = 0
         if self.last_volume == volume:
             logging.debug("hold position")
             return 0
@@ -52,6 +53,7 @@ class TargetPosTaskOffline:
                 logging.debug("sell long %d", position_change)
                 for _ in range(-position_change):
                     profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
+                    commission += self.commission
         elif volume < 0 and self.last_volume <= 0:
             position_change = self.last_volume - volume
             if position_change > 0:
@@ -62,10 +64,12 @@ class TargetPosTaskOffline:
                 logging.debug("sell short %d", position_change)
                 for _ in range(-position_change):
                     profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
+                    commission += self.commission
         elif volume >= 0 and self.last_volume < 0:
             logging.debug("sell all short %d", self.last_volume)
             while len(self.positions) > 0:
                 profit += (self.positions.popleft() - price) * self.margin_rate - self.commission
+                commission += self.commission
             logging.debug("buy long %d", volume)
             for _ in range(volume):
                 self.positions.append(price)
@@ -73,11 +77,12 @@ class TargetPosTaskOffline:
             logging.debug("sell all long %d", self.last_volume)
             while len(self.positions) > 0:
                 profit += (price - self.positions.popleft()) * self.margin_rate - self.commission
+                commission += self.commission
             logging.debug("buy short %d", volume)
             for _ in range(-volume):
                 self.positions.append(price)
         self.last_volume = volume
-        return profit
+        return profit, commission
 
 class SimpleTargetPosTaskOffline:
     """

@@ -58,18 +58,11 @@ class FuturesEnvV3_1(gym.Env):
         self.max_steps = config.max_steps
 
         # Trading config
-        self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
-        self.n_OHLCV = ["n_" + i for i in self.OHLCV]
-        self.factors = Factors()
-        self.factor_length = 20
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
         self.data_length = config.data_length  # data length for observation
-        self.interval: str = config.interval
+        self.interval: str = config.interval # interval for OHLCV
         self.bar_length: int = 300  # subscribed bar length
-        if self.is_offline:
-            self._set_offline_data()
-        else:
-            self._set_api_data()
+        self.factor_length = 20
 
         # RL config
         self.action_space_type = config.action_space_type
@@ -85,18 +78,16 @@ class FuturesEnvV3_1(gym.Env):
             "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
-            # self.interval: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval], 5), dtype=np.float64),
             # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float64),
             "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float64),
             # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float64),
             # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float64),
         })
-        self.factors_set = {
-            "bias",
-            "macd_bar",
-            "boll",
-            "kdj",
-        }
+        self.factors = Factors(self.observation_space, self.factor_length)
+        if self.is_offline:
+            self._set_offline_data()
+        else:
+            self._set_api_data()
 
     def _set_offline_data(self):
         # get offline data from db
@@ -115,7 +106,7 @@ class FuturesEnvV3_1(gym.Env):
 
     def _set_target_volume(self, volume: int):
         if self.is_offline:
-            self.profit = self.target_pos_task.set_target_volume(
+            self.profit, self.commission = self.target_pos_task.set_target_volume(
                 volume, self.last_price)
         else:
             self.target_pos_task.set_target_volume(volume)
@@ -158,52 +149,33 @@ class FuturesEnvV3_1(gym.Env):
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
-            state_1 = self.bar_1[self.OHLCV].iloc[-1].to_numpy(
+            ohlcv = self.bar_1[self.factors.OHLCV].iloc[-1].to_numpy(
                 dtype=np.float64)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    state_1 = self.bar_1[self.OHLCV].iloc[-self.data_length[self.interval]:].to_numpy(
+                    ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.data_length[self.interval]:].to_numpy(
                         dtype=np.float64)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
                     self.last_datatime = self.instrument_quote.datetime
-                    if np.isnan(state_1).any():
+                    if np.isnan(ohlcv).any():
                         self.api.wait_update()
                     else:
                         break
-        return self._set_state_factors(state_1)
 
-    def _set_state_factors(self, state_1):
-        """
-        Set state factors
-        """
         state = dict()
-        # calculate factors
-        if "bias" in self.factors_set:
-            self.bias = np.array(self.factors.bias(
-                self.bar_1, n=7), dtype=np.float64)
-            state["bias"] = self.bias
-        if "macd_bar" in self.factors_set:
-            self.macd_bar = np.array(self.factors.macd_bar(
-                self.bar_1, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
-        if "boll" in self.factors_set:
-            self.boll = np.array(self.factors.boll_residual(
-                self.bar_1, n=26, p=5, price = self.last_price), dtype=np.float64)
-            state["boll"] = self.boll
-        if "kdj" in self.factors_set:
-            self.kdj = np.array(self.factors.kdj(
-                self.bar_1, n=9, m1=3, m2=3), dtype=np.float64)
-            state["kdj"] = self.kdj
-        
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
-        state["OHLCV"] = state_1
+        state["OHLCV"] = ohlcv
         state["last_price"] = np.array([self.last_price], dtype=np.float64)
         state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64)
+        factors_state, self.factors_info = self.factors.set_state_factors(bar_data=self.bar_1, last_price=self.last_price)
+        state.update(factors_state)
         return state
+
 
     def reset(self):
         """
@@ -213,10 +185,15 @@ class FuturesEnvV3_1(gym.Env):
         self.steps = 0
         self.last_action = 0  # last target position volume
         self.last_commision = 0
+
         self.reward = 0
+
         self.accumulated_profit = 0
         self.accumulated_reward = 0
+
         self.profit = 0
+        self.commission = 0
+
         self.action_count = 0
         self._update_subscription()
         if self.is_random_sample:
@@ -260,46 +237,36 @@ class FuturesEnvV3_1(gym.Env):
                  "training_info/action_count": self.action_count, })
 
     def log_info(self,):
-        if self.is_offline:
-            self.info = {
-                # "training_info/time": time_to_s_timestamp(self.last_datatime),
-                "training_info/last_action": self.last_action,
-                # "training_info/profit": self.profit,
-                "training_info/last_price": self.last_price,
-
-                # "training_info/bias": self.bias[0],s
-                # "training_info/macd_bar": self.macd_bar[-1],
-                # "training_info/boll_top": self.boll[0],
-                # "training_info/boll_mid": self.boll[1],
-                # "training_info/boll_bottom": self.boll[2],
-                # "training_info/kdj": self.kdj[0],
-            }
-        else:
-            self.info = {
-                "backtest_info/pre_balance": self.account.pre_balance,
-                "backtest_info/static_balance": self.account.static_balance,
-                "backtest_info/balance": self.account.balance,
-                "backtest_info/available": self.account.available,
-                "backtest_info/float_profit": self.account.float_profit,
-                "backtest_info/position_profit": self.account.position_profit,
-                "backtest_info/close_profit": self.account.close_profit,
-                # "frozen_margin": self.account.frozen_margin,
-                # "margin": self.account.margin,
-                # "frozen_commission": self.account.frozen_commission,
-                "backtest_info/commission": self.account.commission,
-                # "frozen_premium": self.account.frozen_premium,
-                # "premium": self.account.premium,
-                "backtest_info/risk_ratio": self.account.risk_ratio,
-                # "market_value": self.account.market_value,
-                "backtest_info/time": time_to_s_timestamp(self.last_datatime),
-                "backtest_info/commision_change": self.account.commission - self.last_commision,
-                "backtest_info/last_action": self.last_action,
-                "backtest_info/profit": self.profit,
-                "backtest_info/last_price": self.instrument_quote.last_price,
-                "backtest_info/volume": self.instrument_quote.volume,
-            }
-        # self.last_commision = self.account.commission
         if self.wandb:
+            if self.is_offline:
+                self.info = {
+                    # "training_info/time": time_to_s_timestamp(self.last_datatime),
+                    "training_info/last_action": self.last_action,
+                }
+            else:
+                self.info = {
+                    "backtest_info/pre_balance": self.account.pre_balance,
+                    "backtest_info/static_balance": self.account.static_balance,
+                    "backtest_info/balance": self.account.balance,
+                    "backtest_info/available": self.account.available,
+                    "backtest_info/float_profit": self.account.float_profit,
+                    "backtest_info/position_profit": self.account.position_profit,
+                    "backtest_info/close_profit": self.account.close_profit,
+                    # "backtest_info/frozen_margin": self.account.frozen_margin,
+                    # "backtest_info/margin": self.account.margin,
+                    # "backtest_info/frozen_commission": self.account.frozen_commission,
+                    "backtest_info/commission": self.account.commission,
+                    # "backtest_info/frozen_premium": self.account.frozen_premium,
+                    # "backtest_info/premium": self.account.premium,
+                    "backtest_info/risk_ratio": self.account.risk_ratio,
+                    # "backtest_info/market_value": self.account.market_value,
+                    "backtest_info/time": time_to_s_timestamp(self.last_datatime),
+                    "backtest_info/commision_change": self.account.commission - self.last_commision,
+                    "backtest_info/last_action": self.last_action,
+                    "backtest_info/volume": self.instrument_quote.volume,
+                }
+            self.info["factors/last_price"] = self.last_price
+            self.info.update(self.factors_info)
             wandb.log(self.info)
 
     def seed(self, seed=None):
