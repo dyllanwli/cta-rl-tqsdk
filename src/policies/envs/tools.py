@@ -42,8 +42,7 @@ class TargetPosTaskOffline:
         commission = 0
         if self.last_volume == volume:
             logging.debug("hold position")
-            return 0
-        if volume > 0 and self.last_volume >= 0:
+        elif volume > 0 and self.last_volume >= 0:
             position_change = volume - self.last_volume
             if position_change > 0:
                 logging.debug("buy long %d", position_change)
