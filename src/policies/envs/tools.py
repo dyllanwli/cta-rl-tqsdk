@@ -148,8 +148,8 @@ class DataLoader:
                 try:
                     df = self.mongo.load_bar_data(
                         instrument_id, start_dt, self.end_dt, interval, limit=offset)
-                    assert df.shape[0] >= offset
-                    break
+                    if df.shape[0] >= offset:
+                        break
                 except Exception as e:
                     print("dataloader: random offline data load failed, retrying...")
 

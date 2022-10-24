@@ -10,16 +10,14 @@ from tqsdk import TqApi
 import wandb
 
 def main():
-    tqAPI = API(account='a1')
+    tqAPI = API(account='a2')
     dao = MongoDAO()
-    # dao.download_data(tqAPI.auth, ['cotton', 'methanol'], date(2016, 10, 25), date(2022, 2, 1))
-    # dao.download_data(tqAPI.auth, ['rebar'], date(2016, 10, 25), date(2022, 2, 1))
-    # intervals = {'1s', '5s', '1m', '1d'}
-    # symbol_list = ['soybean_oil']
-    # dao.download_data(tqAPI.auth, symbol_list, date(2020, 7, 5), date(2022, 9, 1), intervals)
-    intervals =  {'1s', '5s', '1m', '1d'}
-    symbol_list = ['methanol']
-    dao.download_data(tqAPI.auth, symbol_list, date(2016, 1, 1), date(2022, 9, 1), intervals)
+    intervals = {'1s', '5s', '1m', '1d'}
+    symbol_list = ['soybean_oil']
+    dao.download_data(tqAPI.auth, symbol_list, date(2020, 9, 3), date(2022, 9, 1), intervals)
+    # intervals =  {'1s', '5s', '1m', '1d'}
+    # symbol_list = ['methanol']
+    # dao.download_data(tqAPI.auth, symbol_list, date(2016, 7, 4), date(2022, 9, 1), intervals)
     print(symbol_list, intervals, "downloaded")
 if __name__ == "__main__":
     main()

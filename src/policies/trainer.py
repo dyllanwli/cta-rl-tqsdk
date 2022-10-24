@@ -18,7 +18,7 @@ from utils import Interval, MaxStepByDay
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "tune"):
+    def __init__(self, account: str = "a4", train_type: str = "train"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
@@ -26,11 +26,15 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
-        self.project_name = "futures-trading-6"
+        self.project_name = "futures-alpha-6"
         INTERVAL = Interval()
         MAXSTEP = MaxStepByDay()
         self.interval = INTERVAL.ONE_MIN
         self.max_steps = MAXSTEP.ONE_MIN
+        self.training_iteration = dict({
+            INTERVAL.ONE_MIN: 100,
+            INTERVAL.FIVE_SEC: 400,
+        })
 
         # only trainer mode will log to wandb in env
         self.env_config = {"cfg": EnvConfig(
@@ -57,7 +61,7 @@ class RLTrainer:
         if is_tune:
             # use tuner
             stop = {
-                "training_iteration": 400,
+                "training_iteration": self.training_iteration[self.interval],
                 "episode_reward_min": 0,
             }
             cb = [WandbLoggerCallback(
@@ -82,7 +86,7 @@ class RLTrainer:
             # use trainer
             trainer = algos.trainer
             print(algos.config)
-            for i in range(10000):
+            for i in range(self.training_iteration[self.interval]*10):
                 result = trainer.train()
                 self.logging(result)
                 if i % 500 == 0:

@@ -82,15 +82,21 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int64)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "OHLCV": spaces.Box(low=0, high=1, shape=(5,), dtype=np.float64),
+            "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float64),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int64),
             # self.interval: spaces.Box(low=0, high=1e10, shape=(self.data_length[self.interval], 5), dtype=np.float64),
-            "macd_bar": spaces.Box(low=-np.inf, high=np.inf, shape=(self.factor_length, ), dtype=np.float64),
-            "bias": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
-            "boll": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
-            "kdj": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
+            # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float64),
+            "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float64),
+            # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float64),
+            # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float64),
         })
+        self.factors_set = {
+            "bias",
+            "macd_bar",
+            "boll",
+            "kdj",
+        }
 
     def _set_offline_data(self):
         # get offline data from db
@@ -98,7 +104,7 @@ class FuturesEnvV3_1(gym.Env):
         offset = self.bar_length + self.bar_start_step + self.max_steps + 10
         self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
             interval=self.interval, instrument_id=self.symbol, offset=offset)
-        self.offline_data = self.factors.min_max_normalize(self.offline_data)
+        # self.offline_data = self.factors.min_max_normalize(self.offline_data)
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -141,6 +147,9 @@ class FuturesEnvV3_1(gym.Env):
         return reward
 
     def _get_state(self):
+        """
+        Get state from data
+        """
         if self.is_offline:
             # offline state0
             self.bar_1 = self.offline_data.iloc[self.bar_start_step:
@@ -149,7 +158,7 @@ class FuturesEnvV3_1(gym.Env):
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
-            state_1 = self.bar_1[self.n_OHLCV].iloc[-1].to_numpy(
+            state_1 = self.bar_1[self.OHLCV].iloc[-1].to_numpy(
                 dtype=np.float64)
         else:
             # online state
@@ -165,38 +174,35 @@ class FuturesEnvV3_1(gym.Env):
                         self.api.wait_update()
                     else:
                         break
+        return self._set_state_factors(state_1)
 
+    def _set_state_factors(self, state_1):
+        """
+        Set state factors
+        """
+        state = dict()
+        # calculate factors
+        if "bias" in self.factors_set:
+            self.bias = np.array(self.factors.bias(
+                self.bar_1, n=7), dtype=np.float64)
+            state["bias"] = self.bias
+        if "macd_bar" in self.factors_set:
+            self.macd_bar = np.array(self.factors.macd_bar(
+                self.bar_1, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
+        if "boll" in self.factors_set:
+            self.boll = np.array(self.factors.boll_residual(
+                self.bar_1, n=26, p=5, price = self.last_price), dtype=np.float64)
+            state["boll"] = self.boll
+        if "kdj" in self.factors_set:
+            self.kdj = np.array(self.factors.kdj(
+                self.bar_1, n=9, m1=3, m2=3), dtype=np.float64)
+            state["kdj"] = self.kdj
+        
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
-
-        # calculate factors
-        self.bias = np.array(self.factors.bias(
-            self.bar_1, n=7), dtype=np.float64)
-        self.macd_bar = np.array(self.factors.macd_bar(
-            self.bar_1, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
-        self.boll = np.array(self.factors.boll_residual(
-            self.bar_1, n=26, p=5, price = self.last_price), dtype=np.float64)
-        self.kdj = np.array(self.factors.kdj(
-            self.bar_1, n=9, m1=3, m2=3), dtype=np.float64)
-
-        # deal with the np.NaN
-        # self.macd_bar = np.nan_to_num(self.macd_bar, nan=np.nanmean(self.macd_bar))
-        # self.kdj = np.nan_to_num(self.kdj, nan=0)
-
-        # assert not np.isnan(self.bias).any()
-        # assert not np.isnan(self.macd_bar).any()
-        # assert not np.isnan(self.boll).any()
-        # assert not np.isnan(self.kdj).any()
-
-        state = dict({
-            "OHLCV": state_1,
-            "last_price": np.array([self.last_price], dtype=np.float64),
-            "datetime": np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64),
-            "bias": self.bias,
-            "macd_bar": self.macd_bar,
-            "boll": self.boll,
-            "kdj": self.kdj,
-        })
+        state["OHLCV"] = state_1
+        state["last_price"] = np.array([self.last_price], dtype=np.float64)
+        state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int64)
         return state
 
     def reset(self):
@@ -260,12 +266,13 @@ class FuturesEnvV3_1(gym.Env):
                 "training_info/last_action": self.last_action,
                 # "training_info/profit": self.profit,
                 "training_info/last_price": self.last_price,
-                "training_info/bias": self.bias[0],
-                "training_info/macd_bar": self.macd_bar[-1],
+
+                # "training_info/bias": self.bias[0],s
+                # "training_info/macd_bar": self.macd_bar[-1],
                 # "training_info/boll_top": self.boll[0],
-                "training_info/boll_mid": self.boll[1],
+                # "training_info/boll_mid": self.boll[1],
                 # "training_info/boll_bottom": self.boll[2],
-                "training_info/kdj": self.kdj[0],
+                # "training_info/kdj": self.kdj[0],
             }
         else:
             self.info = {
