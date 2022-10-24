@@ -39,7 +39,7 @@ def pearson_corr(df_, target):
     for i in df.columns.values:
         if (
             (type(df[i].values[-1]) ==
-             float or type(df[i].values[-1]) == np.float64)
+             float or type(df[i].values[-1]) == np.float32)
             and i != "alpha084"
             and i != "alpha191-017"
         ):
@@ -61,7 +61,7 @@ def spearmanr_corr(df_, target):
     for i in df.columns.values:
         if (
             (type(df[i].values[-1]) ==
-             float or type(df[i].values[-1]) == np.float64)
+             float or type(df[i].values[-1]) == np.float32)
             and i != "alpha084"
             and i != "alpha191-017"
         ):

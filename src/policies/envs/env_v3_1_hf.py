@@ -1,3 +1,4 @@
+from typing import Dict
 import numpy as np
 from copy import deepcopy
 import pytz
@@ -18,9 +19,9 @@ from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
 
-class FuturesEnvV3_1(gym.Env):
+class FuturesEnvV3_1_HF(gym.Env):
     """
-    Custom Environment for RL training
+    Custom High Frequency Env
     TqApi is required.
     Single symbol and interday only. 
     Supported:
@@ -59,9 +60,9 @@ class FuturesEnvV3_1(gym.Env):
 
         # Trading config
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
-        self.data_length = config.data_length  # data length for observation
         self.interval: str = config.interval # interval for OHLCV
         self.bar_length: int = 300  # subscribed bar length
+        self.ohlcv_length: int = config.data_length[self.interval]   # OHLCV length
         self.factor_length = 20
 
         # RL config
@@ -75,7 +76,11 @@ class FuturesEnvV3_1(gym.Env):
                 low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int32)
 
         self.observation_space: spaces.Dict = spaces.Dict({
-            "OHLCV": spaces.Box(low=0, high=1e10, shape=(5,), dtype=np.float32),
+            "open": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "high": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "low": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "close": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
+            "volume": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
             # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
@@ -149,14 +154,14 @@ class FuturesEnvV3_1(gym.Env):
             self.volume = self.bar_1.iloc[-1]['volume']
             self.last_datatime = self.bar_1.iloc[-1]['datetime']
 
-            ohlcv = self.bar_1[self.factors.OHLCV].iloc[-1].to_numpy(
+            ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.ohlcv_length:].to_numpy(
                 dtype=np.float32)
         else:
             # online state
             while True:
                 self.api.wait_update()
                 if self.api.is_changing(self.bar_1.iloc[-1], "datetime"):
-                    ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.data_length[self.interval]:].to_numpy(
+                    ohlcv = self.bar_1[self.factors.OHLCV].iloc[-self.ohlcv_length:].to_numpy(
                         dtype=np.float32)
                     self.last_price = self.instrument_quote.last_price
                     self.volume = self.instrument_quote.volume
@@ -169,9 +174,12 @@ class FuturesEnvV3_1(gym.Env):
         state = dict()
         datetime_state = time_to_datetime(self.last_datatime).astimezone(
             pytz.timezone('Asia/Shanghai'))
-        state["OHLCV"] = ohlcv
         state["last_price"] = np.array([self.last_price], dtype=np.float32)
         state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int32)
+
+        ohlcv_state = self.factors.set_ohlcv_state(ohlcv) 
+        state.update(ohlcv_state)
+        
         factors_state, self.factors_info = self.factors.set_state_factors(bar_data=self.bar_1, last_price=self.last_price)
         state.update(factors_state)
         return state

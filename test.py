@@ -106,17 +106,17 @@ from gym import spaces
 # dt = time_to_datetime(sample_start)
 # print(dt)
 
-# normalized_cols = ["open", "high", "low", "close", "volume", "open_oi", "close_oi"]
+normalized_cols = ["high", "open", "low", "close", "volume", "open_oi", "close_oi"]
 # raw_cols = ["raw_open", "raw_high", "raw_low", "raw_close", "raw_volume", "raw_open_oi", "raw_close_oi"]
-# df = pd.read_csv('test.csv')
-# df = df.iloc[-5:]
-# print(df)
-
-
-info = {
-    "name": "test",
-    "start_date": "2021-01-01",
-}
-
-info.update({"end_date": "2021-01-02"})
-print(info)
+df = pd.read_csv('test.csv')
+ndarray = df[normalized_cols].iloc[-5:].to_numpy(dtype=np.float32)
+high = ndarray[:, 0]
+open = ndarray[:, 1]
+low = ndarray[:, 2]
+close = ndarray[:, 3]
+volume = ndarray[:, 4]
+open_oi = ndarray[:, 5]
+close_oi = ndarray[:, 6]
+print(high)
+print(open)
+print(low)

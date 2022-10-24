@@ -62,16 +62,16 @@ class FuturesEnvV2_2(gym.Env):
         # RL config
         self.max_steps = config.max_steps
         self.action_space: spaces.Box = spaces.Box(
-            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64)
+            low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32)
         self.observation_space: spaces.Dict = spaces.Dict({
-            # "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int64),
-            "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float64),
-            "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int64),
-            "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int64),
-            Interval.ONE_SEC.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_SEC.value], 5), dtype=np.float64),
-            Interval.ONE_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_MIN.value], 5), dtype=np.float64),
-            Interval.THIRTY_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.THIRTY_MIN.value], 5), dtype=np.float64),
-            # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float64),
+            # "last_volume": spaces.Box(low=-config.max_volume, high=config.max_volume, shape=(1,), dtype=np.int32),
+            "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
+            "hour": spaces.Box(low=0, high=23, shape=(1,), dtype=np.int32),
+            "minute": spaces.Box(low=0, high=59, shape=(1,), dtype=np.int32),
+            Interval.ONE_SEC.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_SEC.value], 5), dtype=np.float32),
+            Interval.ONE_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.ONE_MIN.value], 5), dtype=np.float32),
+            Interval.THIRTY_MIN.value: spaces.Box(low=0, high=1e10, shape=(self.data_length[Interval.THIRTY_MIN.value], 5), dtype=np.float32),
+            # "bar_1d": spaces.Box(low=0, high=np.inf, shape=(self.data_length['bar_1d'], 5), dtype=np.float32),
         })
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
@@ -127,15 +127,15 @@ class FuturesEnvV2_2(gym.Env):
             self.api.wait_update()
             if self.api.is_changing(self.bar_1s.iloc[-1], "datetime"):
 
-                bar_1s = self.bar_1s[self.OHLCV].to_numpy(dtype=np.float64)
-                bar_1m = self.bar_1m[self.OHLCV].to_numpy(dtype=np.float64)
-                bar_30m = self.bar_30m[self.OHLCV].to_numpy(dtype=np.float64)
+                bar_1s = self.bar_1s[self.OHLCV].to_numpy(dtype=np.float32)
+                bar_1m = self.bar_1m[self.OHLCV].to_numpy(dtype=np.float32)
+                bar_30m = self.bar_30m[self.OHLCV].to_numpy(dtype=np.float32)
 
                 state = dict({
-                    # "last_volume": np.array([self.last_volume], dtype=np.int64),
-                    "last_price": np.array([self.instrument_quote.last_price], dtype=np.float64),
-                    "hour": np.array([now.hour], dtype=np.int64),
-                    "minute": np.array([now.minute], dtype=np.int64),
+                    # "last_volume": np.array([self.last_volume], dtype=np.int32),
+                    "last_price": np.array([self.instrument_quote.last_price], dtype=np.float32),
+                    "hour": np.array([now.hour], dtype=np.int32),
+                    "minute": np.array([now.minute], dtype=np.int32),
                     Interval.ONE_SEC.value: bar_1s,
                     Interval.ONE_MIN.value: bar_1m,
                     Interval.THIRTY_MIN.value: bar_30m,

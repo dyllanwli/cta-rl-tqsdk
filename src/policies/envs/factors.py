@@ -12,6 +12,16 @@ class Factors:
         self.OHLCV = ['open', 'high', 'low', 'close', 'volume']
         self.n_OHLCV = ["n_open", "n_high", "n_low", "n_close", "n_volume"]
     
+    def set_ohlcv_state(self, ohlcv: np.ndarray):
+        state = {
+            "open": ohlcv[:, 0],
+            "high": ohlcv[:, 1],
+            "low": ohlcv[:, 2],
+            "close": ohlcv[:, 3],
+            "volume": ohlcv[:, 4],
+        }
+        return state
+    
     def set_state_factors(self, bar_data, last_price):
         """
         :param bar_data: bar data
@@ -21,22 +31,22 @@ class Factors:
         state = dict()
         if "bias" in self.factors_set:
             factor = np.array(self.bias(
-                bar_data, n=7), dtype=np.float64)
+                bar_data, n=7), dtype=np.float32)
             state["bias"] = factor
             info["factors/bias"] = factor[0]
         if "macd_bar" in self.factors_set:
             factor = np.array(self.macd_bar(
-                bar_data, short=30, long=60, m=15), dtype=np.float64)[-self.factor_length:]
+                bar_data, short=30, long=60, m=15), dtype=np.float32)[-self.factor_length:]
             state["macd_bar"] = factor
             info["factors/macd_bar"] = factor[-1]
         if "boll" in self.factors_set:
             factor = np.array(self.boll_residual(
-                bar_data, n=26, p=5, price = last_price), dtype=np.float64)
+                bar_data, n=26, p=5, price = last_price), dtype=np.float32)
             state["boll"] = factor
             info["factors/boll_mid"] = factor[1]
         if "kdj" in self.factors_set:
             factor = np.array(self.kdj(
-                bar_data, n=9, m1=3, m2=3), dtype=np.float64)
+                bar_data, n=9, m1=3, m2=3), dtype=np.float32)
             state["kdj"] = factor
             info["factors/kdj_k"] = factor[0]
         return state, info
