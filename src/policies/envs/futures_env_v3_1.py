@@ -59,6 +59,7 @@ class FuturesEnvV3_1(gym.Env):
         self.dataloader = DataLoader(config)
         self.symbol = get_symbols_by_names(config)[0]
         self.high_freq = config.high_freq
+        self.max_hold_steps = config.max_hold_steps
         self.max_steps = config.max_steps
 
         # Trading config
@@ -86,18 +87,20 @@ class FuturesEnvV3_1(gym.Env):
             "volume": spaces.Box(low=0, high=1e10, shape=(self.ohlcv_length,), dtype=np.float32),
             "last_action": spaces.Box(low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int32),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
+            "float_profit": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
             "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
-            # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
-            "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
+            ### factors ###
+            "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
+            # "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
             # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
             # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
         })
         self.factors = Factors(self.observation_space, self.factor_length)
         if self.is_offline:
             self._set_offline_data()
+            self.balance, self.last_balance = 0, 0
         else:
             self._set_api_data()
-        self.accumulated_profit = 0
 
     def _set_offline_data(self):
         # get offline data from db
@@ -142,6 +145,7 @@ class FuturesEnvV3_1(gym.Env):
         hold_penalty = 0.0001
         reward = np.tanh((self.profit - hold_penalty)/100)
         self.accumulated_profit += self.profit
+        self.balance += self.profit
         self.accumulated_reward += reward
         if self.profit == 0:
             self.holded_steps += 1
@@ -181,6 +185,7 @@ class FuturesEnvV3_1(gym.Env):
             pytz.timezone('Asia/Shanghai'))
         state['last_action'] = np.array([self.last_action], dtype=np.int32)
         state["last_price"] = np.array([self.last_price], dtype=np.float32)
+        state["float_profit"] = np.array([self.accumulated_profit], dtype=np.float32)
         state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int32)
 
         ohlcv_state = self.factors.set_ohlcv_state(ohlcv) 
@@ -207,17 +212,14 @@ class FuturesEnvV3_1(gym.Env):
         """
         self.done = False
         self.steps = 0
+        self.overall_steps = 0
         self.last_action = 0
-        self.last_commision = 0
-
-        self.reward = 0
-
-        self.accumulated_reward = 0
-
-        self.profit = 0
-        self.commission = 0
-
         self.holded_steps = 0
+        self.last_commision, self.commission = 0, 0
+
+        self.reward, self.profit = 0, 0
+        self.accumulated_reward, self.accumulated_profit = 0, 0
+
         self._update_subscription()
         if self.is_random_sample:
             self._set_offline_data()
@@ -226,18 +228,18 @@ class FuturesEnvV3_1(gym.Env):
 
     def step(self, action):
         try:
-            if self.steps >= self.max_steps:
+            if self.steps >= self.max_steps or (self.high_freq and self.holded_steps >= self.max_hold_steps):
                 self.done = True
-                self.log_epsoide_info()
                 self._set_target_volume(0)
                 self.last_action = 0
             else:
                 action = self._preprocess_action(action)
                 self._set_target_volume(action)
                 self.last_action = action
-            state = self._get_state()
             self.reward = self._reward_function()
+            state = self._get_state()
             self.steps += 1
+            self.overall_steps += 1
             self.bar_start_step += 1
             self._update_subscription()
             self.log_info()
@@ -286,6 +288,11 @@ class FuturesEnvV3_1(gym.Env):
                 }
             self.info["factors/last_price"] = self.last_price
             self.info.update(self.factors_info)
+            if self.done:
+                self.log_epsoide_info()
+            if self.overall_steps % self.max_steps == 0:
+                self.info["training_info/daily_profit"] = self.balance - self.last_balance
+                self.last_balance = self.balance
             wandb.log(self.info)
 
     def seed(self, seed=None):

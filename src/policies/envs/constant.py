@@ -58,12 +58,8 @@ class EnvConfig:
         self.interval: str = interval
 
         self.high_freq: bool = high_freq
-
-        # dataloader settings
-        if self.high_freq:
-            self.max_steps: int = int(max_steps)/30 # max actions per episode
-        else:
-            self.max_steps: int = max_steps
+        self.max_hold_steps: int = 20
+        self.max_steps: int = max_steps
         self.is_offline: bool = is_offline
         self.is_random_sample: bool = is_random_sample
         
