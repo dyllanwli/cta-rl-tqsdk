@@ -33,7 +33,7 @@ class RLTrainer:
         self.training_iteration = dict({
             INTERVAL.ONE_MIN: 100,
             INTERVAL.FIVE_SEC: 400,
-            INTERVAL.ONE_SEC: 1000,
+            INTERVAL.ONE_SEC: 500,
         })
 
         # only trainer mode will log to wandb in env
@@ -63,7 +63,7 @@ class RLTrainer:
             # use tuner
             stop = {
                 "training_iteration": self.training_iteration[self.interval],
-                "episode_reward_min": 0,
+                "episode_reward_min": 1,
             }
             cb = [WandbLoggerCallback(
                 project=self.project_name,
@@ -72,7 +72,7 @@ class RLTrainer:
             )]
             tuner = tune.Tuner(self.algo_name, param_space=algos.config,
                                run_config=air.RunConfig(
-                                    # verbose=1,
+                                    verbose=1,
                                     stop=stop,
                                     checkpoint_config=air.CheckpointConfig(
                                         checkpoint_frequency=100),

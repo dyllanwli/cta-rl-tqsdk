@@ -92,9 +92,9 @@ class FuturesEnvV3_1(gym.Env):
             # "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
             ### factors ###
             # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
-            # "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
+            "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
             # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
-            "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
+            # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
         })
         self.factors = Factors(self.observation_space, self.factor_length)
         if self.is_offline:
@@ -143,12 +143,11 @@ class FuturesEnvV3_1(gym.Env):
     def _reward_function(self):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1] using tanh
-        # hold_penalty = 0.0001
-        # reward = np.tanh((self.profit - hold_penalty)/100)
+        reward = np.tanh((self.profit)/100)
         reward = self.profit
         self.accumulated_profit += self.profit
         self.balance += self.profit
-        # self.accumulated_reward += reward
+        self.accumulated_reward += reward
         if self.profit == 0:
             self.holded_steps += 1
         return reward
@@ -218,7 +217,7 @@ class FuturesEnvV3_1(gym.Env):
         self.last_commision, self.commission = 0, 0
 
         self.reward, self.profit = 0, 0
-        # self.accumulated_reward = 0
+        self.accumulated_reward = 0
         self.accumulated_profit = 0
 
         self._update_subscription()
@@ -244,7 +243,7 @@ class FuturesEnvV3_1(gym.Env):
             self.bar_start_step += 1
             self._update_subscription()
             self.log_info()
-            return state, self.reward, self.done, self.info
+            return state, self.reward, self.done, {}
         except Exception as e:
             print("env: Error in step, resetting position to 0. Action: ", action)
             self._set_target_volume(0)
@@ -255,7 +254,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.wandb:
             wandb.log(
                 {"training_info/accumulated_profit": self.accumulated_profit,
-                #  "training_info/accumulated_reward": self.accumulated_reward,
+                 "training_info/accumulated_reward": self.accumulated_reward,
                  "training_info/holded_steps": self.holded_steps, })
 
     def log_info(self,):

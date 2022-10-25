@@ -22,10 +22,10 @@ class A3CConfig:
             "use_gae": True,
             "lambda": 0.5,
             "grad_clip": 40.0,
-            "lr": tune.grid_search([1e-05, 1e-06, 1e-07]),
+            "lr": tune.grid_search([5e-06, 2e-06]),
             # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
             "vf_loss_coeff": 0.5,
-            # "entropy_coeff": tune.grid_search([0.01, 0.0001]) if is_tune else 0.01,
+            "entropy_coeff": tune.grid_search([0.01, 0.0001]) if is_tune else 0.01,
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {
@@ -37,7 +37,7 @@ class A3CConfig:
                 ]) if is_tune else [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": tune.grid_search([100]) if is_tune else 100,
+                "max_seq_len": tune.grid_search([150]) if is_tune else 150,
                 "lstm_cell_size": tune.grid_search([512]) if is_tune else 512,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": True,
