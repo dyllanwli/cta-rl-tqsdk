@@ -45,12 +45,13 @@ class InitOverallStep(NamedTuple):
     FIVE_SEC: int = 2*60*12
     ONE_MIN: int = 2*60
 
-class MaxStepByDay(NamedTuple):
-    ONE_SEC: int = 20700
-    FIVE_SEC: int = 4140
-    ONE_MIN: int = 345
-    FIVE_MIN: int = 72
-    FIFTEEN_MIN: int = 24
+max_step_by_day = {
+    "1s": 20700,
+    "5s": 4140,
+    "1m": 345,
+    "5m": 72,
+    "15m": 24,
+}
 
 
 SETTINGS = get_config()

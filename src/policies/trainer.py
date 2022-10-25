@@ -13,12 +13,12 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
 
-from utils import Interval, MaxStepByDay
+from utils import Interval, max_step_by_day
 
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
-    def __init__(self, account: str = "a4", train_type: str = "train"):
+    def __init__(self, account: str = "a4", train_type: str = "tune"):
         print("Initializing RL trainer")
         auth = API(account=account).auth
         self.train_type = train_type  # tune or train
@@ -28,12 +28,12 @@ class RLTrainer:
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
         self.project_name = "futures-alpha-6"
         INTERVAL = Interval()
-        MAXSTEP = MaxStepByDay()
-        self.interval = INTERVAL.FIVE_SEC
-        self.max_steps = MAXSTEP.FIVE_SEC
+        self.interval = INTERVAL.ONE_SEC
+        self.max_steps = max_step_by_day[self.interval]
         self.training_iteration = dict({
             INTERVAL.ONE_MIN: 100,
             INTERVAL.FIVE_SEC: 400,
+            INTERVAL.ONE_SEC: 1000,
         })
 
         # only trainer mode will log to wandb in env

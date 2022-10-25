@@ -25,7 +25,7 @@ class TargetPosTaskOffline:
         self.last_volume = 0
         self.positions = deque([])
         self.commission = commission
-        self.margin_rate = 4.0
+        self.margin_rate = 5.0
         if verbose == 0:
             logging.basicConfig(level=logging.DEBUG)
         else:
@@ -138,10 +138,11 @@ class DataLoader:
             self.config.auth, self.config.backtest, self.config.init_balance)
 
     def get_offline_data(self, interval: str, instrument_id: str, offset: int) -> pd.DataFrame:
+        low_dt = time_to_s_timestamp(self.start_dt)
+        high_dt = time_to_s_timestamp(self.end_dt) - offset - 300
         if self.is_random_sample:
             while True:
-                low_dt = time_to_s_timestamp(self.start_dt)
-                high_dt = time_to_s_timestamp(self.end_dt) - offset - 300
+                
 
                 sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
                 start_dt: datetime = time_to_datetime(sample_start)
@@ -158,8 +159,9 @@ class DataLoader:
             return df
         else:
             print("dataloader: Loading all offline data...")
+            offset = high_dt - low_dt
             df = self.mongo.load_bar_data(
-                instrument_id, self.start_dt, self.end_dt, interval)
+                instrument_id, self.start_dt, self.end_dt, interval, limit=offset)
             return df
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):

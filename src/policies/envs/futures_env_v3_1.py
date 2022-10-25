@@ -61,6 +61,7 @@ class FuturesEnvV3_1(gym.Env):
         self.high_freq = config.high_freq
         self.max_hold_steps = config.max_hold_steps
         self.max_steps = config.max_steps
+        self.overall_steps = 0
 
         # Trading config
         self.target_pos_task = TargetPosTaskOffline() if self.is_offline else None
@@ -88,12 +89,12 @@ class FuturesEnvV3_1(gym.Env):
             "last_action": spaces.Box(low=-self.max_action, high=self.max_action, shape=(1,), dtype=np.int32),
             "last_price": spaces.Box(low=0, high=1e10, shape=(1,), dtype=np.float32),
             "float_profit": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
-            "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
+            # "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
             ### factors ###
-            "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
+            # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
             # "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
             # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
-            # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
+            "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
         })
         self.factors = Factors(self.observation_space, self.factor_length)
         if self.is_offline:
@@ -142,11 +143,12 @@ class FuturesEnvV3_1(gym.Env):
     def _reward_function(self):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1] using tanh
-        hold_penalty = 0.0001
-        reward = np.tanh((self.profit - hold_penalty)/100)
+        # hold_penalty = 0.0001
+        # reward = np.tanh((self.profit - hold_penalty)/100)
+        reward = self.profit
         self.accumulated_profit += self.profit
         self.balance += self.profit
-        self.accumulated_reward += reward
+        # self.accumulated_reward += reward
         if self.profit == 0:
             self.holded_steps += 1
         return reward
@@ -181,12 +183,11 @@ class FuturesEnvV3_1(gym.Env):
                         break
 
         state = dict()
-        datetime_state = time_to_datetime(self.last_datatime).astimezone(
-            pytz.timezone('Asia/Shanghai'))
+        # datetime_state = time_to_datetime(self.last_datatime).astimezone(pytz.timezone('Asia/Shanghai'))
         state['last_action'] = np.array([self.last_action], dtype=np.int32)
         state["last_price"] = np.array([self.last_price], dtype=np.float32)
         state["float_profit"] = np.array([self.accumulated_profit], dtype=np.float32)
-        state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int32)
+        # state["datetime"] = np.array([datetime_state.month, datetime_state.hour, datetime_state.minute], dtype=np.int32)
 
         ohlcv_state = self.factors.set_ohlcv_state(ohlcv) 
         state.update(ohlcv_state)
@@ -212,13 +213,13 @@ class FuturesEnvV3_1(gym.Env):
         """
         self.done = False
         self.steps = 0
-        self.overall_steps = 0
         self.last_action = 0
         self.holded_steps = 0
         self.last_commision, self.commission = 0, 0
 
         self.reward, self.profit = 0, 0
-        self.accumulated_reward, self.accumulated_profit = 0, 0
+        # self.accumulated_reward = 0
+        self.accumulated_profit = 0
 
         self._update_subscription()
         if self.is_random_sample:
@@ -254,7 +255,7 @@ class FuturesEnvV3_1(gym.Env):
         if self.wandb:
             wandb.log(
                 {"training_info/accumulated_profit": self.accumulated_profit,
-                 "training_info/accumulated_reward": self.accumulated_reward,
+                #  "training_info/accumulated_reward": self.accumulated_reward,
                  "training_info/holded_steps": self.holded_steps, })
 
     def log_info(self,):

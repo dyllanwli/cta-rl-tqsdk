@@ -41,24 +41,23 @@ class EnvConfig:
 
         INTERVAL = Interval()
         # INIT_STEP = InitOverallStep()
-        # MAXSTEP = MaxStepByDay()
 
         self.data_length: Dict[str, int] = {
-            INTERVAL.ONE_SEC : 5,
-            INTERVAL.FIVE_SEC : 5,
-            INTERVAL.ONE_MIN : 5,
-            INTERVAL.FIVE_MIN : 5,
-            INTERVAL.FIFTEEN_MIN : 5,
-            INTERVAL.THIRTY_MIN : 5,
-            INTERVAL.ONE_HOUR : 5,
-            INTERVAL.FOUR_HOUR : 5,
-            INTERVAL.ONE_DAY : 5,
+            INTERVAL.ONE_SEC : 1,
+            INTERVAL.FIVE_SEC : 1,
+            INTERVAL.ONE_MIN : 1,
+            INTERVAL.FIVE_MIN : 1,
+            INTERVAL.FIFTEEN_MIN : 1,
+            INTERVAL.THIRTY_MIN : 1,
+            INTERVAL.ONE_HOUR : 1,
+            INTERVAL.FOUR_HOUR : 1,
+            INTERVAL.ONE_DAY : 1,
         }
         # subscribed interval
         self.interval: str = interval
 
         self.high_freq: bool = high_freq
-        self.max_hold_steps: int = 20
+        self.max_hold_steps: int = 30
         self.max_steps: int = max_steps
         self.is_offline: bool = is_offline
         self.is_random_sample: bool = is_random_sample
