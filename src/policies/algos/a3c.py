@@ -37,7 +37,7 @@ class A3CConfig:
                 ]) if is_tune else [256, 256, 256],
                 "fcnet_activation": "relu",
                 "use_lstm": True, # use LSTM or use attention
-                "max_seq_len": tune.grid_search([150]) if is_tune else 150,
+                "max_seq_len": 150,
                 "lstm_cell_size": tune.grid_search([512]) if is_tune else 512,
                 "lstm_use_prev_action": True,
                 "lstm_use_prev_reward": True,
