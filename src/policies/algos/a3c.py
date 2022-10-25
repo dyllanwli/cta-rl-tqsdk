@@ -22,10 +22,10 @@ class A3CConfig:
             "use_gae": True,
             "lambda": 0.5,
             "grad_clip": 40.0,
-            "lr": tune.grid_search([5e-06, 2e-06]),
+            "lr": tune.grid_search([5e-07, 2e-07]),
             # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
             "vf_loss_coeff": 0.5,
-            "entropy_coeff": tune.grid_search([0.01, 0.0001]) if is_tune else 0.01,
+            "entropy_coeff": tune.grid_search([0.2, 0.1, 0.01]) if is_tune else 0.01,
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {

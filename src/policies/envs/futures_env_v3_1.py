@@ -143,7 +143,7 @@ class FuturesEnvV3_1(gym.Env):
     def _reward_function(self):
         # Reward is the profit of the last action
         # set reward bound to [-1, 1] using tanh
-        reward = np.tanh((self.profit)/100)
+        # reward = np.tanh((self.profit)/100)
         reward = self.profit
         self.accumulated_profit += self.profit
         self.balance += self.profit
