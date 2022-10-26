@@ -3,7 +3,6 @@ import tensorflow as tf
 
 import autokeras as ak
 
-
 class AutoMLTrainer(object):
 
     def __init__(self):

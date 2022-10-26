@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# automl
+time_series_forecaster/
+
 # checkpoints
 checkpoints/
 

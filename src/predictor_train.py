@@ -1,7 +1,7 @@
-from src.models.automl import AutoMLTrainer
+from models.automl import AutoMLTrainer
 
 def main():
-    pass
-
+    trainer = AutoMLTrainer()
+    trainer.run()
 if __name__ == "__main__":
     main()
