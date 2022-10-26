@@ -43,7 +43,7 @@ class RLTrainer:
             "live_account": None,
             "wandb": self.wandb_name,
             "is_offline": True,
-            "max_sample_size": 1e7,
+            "max_sample_size": 1e6,
             "project_name": self.project_name,
             "interval": self.interval,
             "max_steps": self.max_steps,
