@@ -1,4 +1,4 @@
-from typing import List, Dict, NamedTuple
+from typing import List, Dict
 from datetime import date
 from enum import Enum
 from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount, TqApi
@@ -7,29 +7,15 @@ from utils.utils import Interval, InitOverallStep
 
 class EnvConfig:
     # env config is a entity
-    def __init__(self,
-                 auth: TqAuth,
-                 symbols: List[str],
-                 start_dt: date = None,
-                 end_dt: date = None,
-                 live_market: bool = False,
-                 live_account: TqAccount = None,
-                 wandb = None,
-                 is_offline: bool = False,
-                 is_random_sample: bool = False,
-                 project_name: str = "futures-trading-4",
-                 interval: str = "1m",
-                 max_steps: int = 345,
-                 high_freq: bool = False,
-                 ):
-        self.auth: TqAuth = auth
-        self.symbols: List[str] = symbols
-        self.start_dt: date = start_dt
-        self.end_dt: date = end_dt
-        self.live_market: bool = live_market
-        self.live_account: TqAccount = live_account
-        self.wandb = wandb
-        self.project_name = project_name
+    def __init__(self, config):
+        self.auth: TqAuth = config["auth"]
+        self.symbols: List[str] = config["symbols"]
+        self.start_dt: date = config["start_dt"]
+        self.end_dt: date = config["end_dt"]
+        self.live_market: bool = config["live_market"]
+        self.live_account: TqAccount = config["live_account"]
+        self.wandb = config["wandb"]
+        self.project_name = config["project_name"]
 
         # rl settings
         self.action_space_type = "discrete" # "discrete" or "continuous"
@@ -54,13 +40,13 @@ class EnvConfig:
             INTERVAL.ONE_DAY : 1,
         }
         # subscribed interval
-        self.interval: str = interval
+        self.interval: str = config["interval"]
 
-        self.high_freq: bool = high_freq
+        self.high_freq: bool = config["high_freq"]
         self.max_hold_steps: int = 30
-        self.max_steps: int = max_steps
-        self.is_offline: bool = is_offline
-        self.is_random_sample: bool = is_random_sample
+        self.max_steps: int = config["max_steps"]
+        self.is_offline: bool = config["is_offline"]
+        self.is_random_sample: bool = config["is_random_sample"]
         
 
     @property

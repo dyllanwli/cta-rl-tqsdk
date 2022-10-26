@@ -1,6 +1,5 @@
 
 from pprint import pprint
-from .envs.constant import EnvConfig
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
 import gym
@@ -32,22 +31,23 @@ class RLTrainer:
             INTERVAL.FIVE_SEC: 400,
             INTERVAL.ONE_SEC: 500,
         })
-
         # only trainer mode will log to wandb in env
-        self.env_config = {"cfg": EnvConfig(
-            auth=auth,
-            symbols=["cotton"],
-            # symbols=["sliver"],
-            start_dt=date(2016, 1, 1),
-            end_dt=date(2022, 8, 1),
-            wandb=self.wandb_name,
-            is_offline=True,
-            is_random_sample=True,
-            project_name=self.project_name,
-            interval=self.interval,
-            max_steps=self.max_steps,
-            high_freq=True,
-        )}
+        self.env_config = {
+            "auth": auth,
+            "symbols": ["cotton"],
+            # "symbols": ["sliver"],
+            "start_dt": date(2016, 1, 1),
+            "end_dt": date(2022, 8, 1),
+            "live_market": False,
+            "live_account": None,
+            "wandb": self.wandb_name,
+            "is_offline": True,
+            "is_random_sample": True,
+            "project_name": self.project_name,
+            "interval": self.interval,
+            "max_steps": self.max_steps,
+            "high_freq": True,
+        }
         self.env = FuturesEnv
 
         ray.init(logging_level=20, num_cpus=62, num_gpus=1, include_dashboard=False)

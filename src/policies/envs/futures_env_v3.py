@@ -33,7 +33,7 @@ class FuturesEnvV3(gym.Env):
 
     def __init__(self, config):
         super(gym.Env, self).__init__()
-        config: EnvConfig = config['cfg']
+        config = EnvConfig(config)
 
         self.wandb = config.wandb if config.wandb else False
         if self.wandb:
