@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from API import API
+from src.utils.api import API
 
 from policies.trainer import RLTrainer
 

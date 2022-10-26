@@ -1,5 +1,4 @@
 
-from API import API
 import logging
 
 from .envs.constant import EnvConfig
@@ -13,8 +12,8 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
 
-from utils import Interval, max_step_by_day
-
+from src.utils.utils import Interval, max_step_by_day
+from src.utils.api import API
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
@@ -53,7 +52,7 @@ class RLTrainer:
         )}
         self.env = FuturesEnv
 
-        ray.init(logging_level=logging.INFO, num_cpus=62, num_gpus=1)
+        ray.init(logging_level=logging.INFO, num_cpus=62, num_gpus=1, include_dashboard=False)
 
     def train(self,):
         is_tune = self.train_type == "tune"

@@ -1,10 +1,6 @@
 from datetime import date, datetime
-from API import API
-# from commodity import Commodity
-# from policies.load_policy import LoadPolicy
+from src.utils.api import API
 from dao.mongo import MongoDAO
-
-# from policies.trainer import RLTrainer
 
 from tqsdk import TqApi
 import wandb
