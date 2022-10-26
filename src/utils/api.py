@@ -1,4 +1,4 @@
-from src.utils.utils import SETTINGS
+from utils.utils import SETTINGS
 from tqsdk import TqApi, TqAuth, TqAccount
 
 

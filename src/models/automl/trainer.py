@@ -87,13 +87,13 @@ class AutoMLTrainer(object):
 
 
         predict_from = 1
-        predict_until = 10
-        lookback = 3
+        predict_until = 5
+        lookback = 10
         clf = ak.TimeseriesForecaster(
             lookback=lookback,
             predict_from=predict_from,
             predict_until=predict_until,
-            max_trials=1,
+            max_trials=3,
             objective="val_loss",
         )
         # Train the TimeSeriesForecaster with train data
@@ -102,7 +102,7 @@ class AutoMLTrainer(object):
             y=data_y,
             validation_data=(data_x_val, data_y_val),
             batch_size=32,
-            epochs=10,
+            # epochs=10,
         )
         # Predict with the best model(includes original training data).
         predictions = clf.predict(data_x_test)

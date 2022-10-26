@@ -2,7 +2,7 @@ from typing import List, Dict, NamedTuple
 from datetime import date
 from enum import Enum
 from tqsdk import TqAuth, TqSim, TqBacktest, BacktestFinished, TqAccount, TqApi
-from src.utils.utils import Interval, InitOverallStep
+from utils.utils import Interval, InitOverallStep
 
 
 class EnvConfig:

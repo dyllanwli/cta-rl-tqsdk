@@ -12,8 +12,8 @@ from ray.air.callbacks.wandb import WandbLoggerCallback
 import ray
 from datetime import date, datetime
 
-from src.utils.utils import Interval, max_step_by_day
-from src.utils.api import API
+from utils.utils import Interval, max_step_by_day
+from utils.api import API
 # from .envs import FuturesEnvV2_2 as FuturesEnv
 
 class RLTrainer:
@@ -25,7 +25,7 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
-        self.project_name = "futures-alpha-6"
+        self.project_name = "futures-alpha-7"
         INTERVAL = Interval()
         self.interval = INTERVAL.ONE_SEC
         self.max_steps = max_step_by_day[self.interval]

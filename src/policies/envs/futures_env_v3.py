@@ -15,7 +15,7 @@ from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
 
-from src.utils.utils import Interval
+from utils.utils import Interval
 
 
 class FuturesEnvV3(gym.Env):

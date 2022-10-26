@@ -8,7 +8,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_config() -> dict:
     # Read YAML file
-    configFilePath = os.path.join(DIR, "config.yaml")
+    configFilePath = os.path.join(DIR, "../config.yaml")
     with open(configFilePath, 'r') as stream:
         config = yaml.safe_load(stream)
         return config

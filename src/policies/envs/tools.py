@@ -11,7 +11,7 @@ from .constant import EnvConfig
 from tqsdk import TargetPosTask, TqSim, TqApi, TqAccount
 # from tqsdk.objs import Account, Quote
 from tqsdk.tafunc import time_to_datetime, time_to_s_timestamp
-from src.utils.commodity import Commodity
+from utils.commodity import Commodity
 from .constant import EnvConfig
 
 from dao.mongo import MongoDAO

@@ -12,7 +12,7 @@ from tqsdk import TqApi, TqAuth, TqSim, TqBacktest
 from tqsdk.objs import Quote, Account, Position
 from tqsdk.tafunc import time_to_datetime, time_to_str
 
-from src.utils.utils import SETTINGS, Interval
+from utils.utils import SETTINGS, Interval
 from utils.commodity import Commodity
 
 
