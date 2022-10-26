@@ -1,7 +1,6 @@
 
 from policies.trainer import RLTrainer
-import logging 
-logging.getLogger('tensorflow').disabled = True
+
 
 def main():
     # tqAPI = API(account='a4')

@@ -1,10 +1,8 @@
 
-import logging
-
+from pprint import pprint
 from .envs.constant import EnvConfig
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
-from pprint import pprint
 import gym
 from ray import air, tune
 from ray.air.result import Result
@@ -52,7 +50,7 @@ class RLTrainer:
         )}
         self.env = FuturesEnv
 
-        ray.init(logging_level=logging.INFO, num_cpus=62, num_gpus=1, include_dashboard=False)
+        ray.init(logging_level=20, num_cpus=62, num_gpus=1, include_dashboard=False)
 
     def train(self,):
         is_tune = self.train_type == "tune"
