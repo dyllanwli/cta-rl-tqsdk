@@ -150,11 +150,9 @@ class DataLoader:
                     instrument_id, start_dt, self.end_dt, interval, limit=offset)
                 if df.shape[0] >= offset:
                     print("dataloader: Loaded offline data from ", start_dt, "with", df.shape[0])
-                    break
+                    return df 
             except Exception as e:
                 print("dataloader: random offline data load failed, retrying...", e)
-
-        return df
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
         """
