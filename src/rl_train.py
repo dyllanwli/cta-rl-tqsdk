@@ -1,10 +1,5 @@
-from datetime import date, datetime
-from src.utils.api import API
 
 from policies.trainer import RLTrainer
-
-from tqsdk import TqApi
-import wandb
 
 def main():
     # tqAPI = API(account='a4')
