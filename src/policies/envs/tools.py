@@ -127,7 +127,6 @@ class SimpleTargetPosTaskOffline:
 class DataLoader:
     def __init__(self, config: EnvConfig):
         self.config = config
-        self.is_random_sample = config.is_random_sample
 
         self.start_dt = datetime.combine(self.config.start_dt, datetime.min.time())
         self.end_dt = datetime.combine(self.config.end_dt , datetime.max.time())
@@ -139,30 +138,23 @@ class DataLoader:
 
     def get_offline_data(self, interval: str, instrument_id: str, offset: int) -> pd.DataFrame:
         low_dt = time_to_s_timestamp(self.start_dt)
-        high_dt = time_to_s_timestamp(self.end_dt) - offset - 300
-        if self.is_random_sample:
-            while True:
-                
+        high_dt = time_to_s_timestamp(self.end_dt) - offset - 100
+        # print("dataloader: Loading offline data...", offset)
+        while True:
+            sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
+            start_dt: datetime = time_to_datetime(sample_start)
+            # start_dt = start_dt + timedelta(hours=7)
+            # print("dataloader: Loading random offline data from ", sample_start_dt)
+            try:
+                df = self.mongo.load_bar_data(
+                    instrument_id, start_dt, self.end_dt, interval, limit=offset)
+                if df.shape[0] >= offset:
+                    print("dataloader: Loaded offline data from ", start_dt, "with", df.shape[0])
+                    break
+            except Exception as e:
+                print("dataloader: random offline data load failed, retrying...", e)
 
-                sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
-                start_dt: datetime = time_to_datetime(sample_start)
-                # start_dt = start_dt + timedelta(hours=7)
-                # print("dataloader: Loading random offline data from ", sample_start_dt)
-                try:
-                    df = self.mongo.load_bar_data(
-                        instrument_id, start_dt, self.end_dt, interval, limit=offset)
-                    if df.shape[0] >= offset:
-                        break
-                except Exception as e:
-                    print("dataloader: random offline data load failed, retrying...", e)
-
-            return df
-        else:
-            print("dataloader: Loading all offline data...")
-            offset = high_dt - low_dt
-            df = self.mongo.load_bar_data(
-                instrument_id, self.start_dt, self.end_dt, interval, limit=offset)
-            return df
+        return df
 
     def _set_account(self, auth, backtest, init_balance, live_market=None, live_account=None):
         """

@@ -55,7 +55,7 @@ class FuturesEnvV3_1(gym.Env):
         print("env: Setting config")
         # data config
         self.is_offline = config.is_offline
-        self.is_random_sample = config.is_random_sample
+        self.max_sample_size = config.max_sample_size
         self.dataloader = DataLoader(config)
         self.symbol = get_symbols_by_names(config)[0]
         self.high_freq = config.high_freq
@@ -98,18 +98,19 @@ class FuturesEnvV3_1(gym.Env):
         })
         self.factors = Factors(self.observation_space, self.factor_length)
         if self.is_offline:
-            self._set_offline_data()
             self.balance, self.last_balance = 0, 0
+            self.bar_start_step = 0
+            self.offline_data: pd.DataFrame = None
         else:
             self._set_api_data()
 
-    def _set_offline_data(self):
-        # get offline data from db
-        self.bar_start_step = 0
-        offset = self.bar_length + self.bar_start_step + self.max_steps + 10
-        self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
-            interval=self.interval, instrument_id=self.symbol, offset=offset)
-        # self.offline_data = self.factors.min_max_normalize(self.offline_data)
+    def _update_offline_data(self):
+        if self.offline_data is None or self.bar_length + self.bar_start_step + self.max_steps >= self.max_sample_size:
+            # update offline data
+            self.bar_start_step = 0
+            self.offline_data: pd.DataFrame = self.dataloader.get_offline_data(
+                interval=self.interval, instrument_id=self.symbol, offset=self.max_sample_size)
+            # self.offline_data = self.factors.min_max_normalize(self.offline_data)
 
     def _set_api_data(self):
         self.api: TqApi = self.dataloader.get_api()
@@ -128,6 +129,7 @@ class FuturesEnvV3_1(gym.Env):
 
     def _update_subscription(self):
         if not self.is_offline:
+            # check subscription every step in online mode
             self.api.wait_update()
             # update quote subscriptions when underlying_symbol changes
             if self.api.is_changing(self.instrument_quote, "underlying_symbol") or self.target_pos_task is None:
@@ -221,8 +223,8 @@ class FuturesEnvV3_1(gym.Env):
         self.accumulated_profit = 0
 
         self._update_subscription()
-        if self.is_random_sample:
-            self._set_offline_data()
+        if self.is_offline:
+            self._update_offline_data()
         state = self._get_state()
         return state
 

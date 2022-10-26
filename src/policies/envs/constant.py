@@ -46,7 +46,8 @@ class EnvConfig:
         self.max_hold_steps: int = 30
         self.max_steps: int = config["max_steps"]
         self.is_offline: bool = config["is_offline"]
-        self.is_random_sample: bool = config["is_random_sample"]
+        self.max_sample_size: int = int(config["max_sample_size"])
+        # set max sample size to reduce sample frequency
         
 
     @property

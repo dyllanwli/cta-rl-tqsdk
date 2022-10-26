@@ -1,4 +1,5 @@
 
+
 from pprint import pprint
 from .envs import FuturesEnvV3_1 as FuturesEnv
 from .algos import Algos
@@ -42,7 +43,7 @@ class RLTrainer:
             "live_account": None,
             "wandb": self.wandb_name,
             "is_offline": True,
-            "is_random_sample": True,
+            "max_sample_size": 1e7,
             "project_name": self.project_name,
             "interval": self.interval,
             "max_steps": self.max_steps,

@@ -9,7 +9,7 @@ class A3CConfig:
             # basic config 
             "env": env,
             "env_config": env_config,
-            "num_workers": 10 if is_tune else 1,
+            "num_workers": 5 if is_tune else 1,
             "num_envs_per_worker": 1,
             # "num_cpus_per_worker": 20,
             "num_gpus": 0 if is_tune else 1,
@@ -20,7 +20,7 @@ class A3CConfig:
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": tune.grid_search([0.4, 0.5, 0.6]) if is_tune else 0.5,
+            "lambda": tune.grid_search([0.5]) if is_tune else 0.5,
             "grad_clip": 40.0,
             "lr": tune.grid_search([1e-06]) if is_tune else 1e-06,
             # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
