@@ -5,6 +5,8 @@ __pycache__/
 
 # checkpoints
 checkpoints/
+optuna_test/
+lightning_logs/
 
 # WandB files
 wandb/

@@ -20,12 +20,12 @@ class A3CConfig:
             # A3C config
             "use_critic": True,
             "use_gae": True,
-            "lambda": tune.grid_search([0.5]) if is_tune else 0.5,
+            "lambda": tune.grid_search([0.3, 0.5, 0.9]) if is_tune else 0.5,
             "grad_clip": 40.0,
-            "lr": tune.grid_search([1e-06]) if is_tune else 1e-06,
+            "lr": tune.grid_search([1e-06, 5e-06]) if is_tune else 1e-06,
             # "lr_schedule": [[0, 5e-05], [100, 1e-05]],
             "vf_loss_coeff": 0.5,
-            "entropy_coeff": tune.grid_search([0.5, 0.2, 0.1, 0.01]) if is_tune else 0.01, # to avoid suboptimal policy
+            "entropy_coeff": tune.grid_search([0.02, 0.01]) if is_tune else 0.01, # to avoid suboptimal policy
             "rollout_fragment_length": 200,
             "min_time_s_per_iteration": 100,
             "model": {

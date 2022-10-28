@@ -23,7 +23,7 @@ class RLTrainer:
 
         self.wandb_name = self.algo_name + "_" + datetime.now().strftime(
             "%Y-%m-%d_%H-%M-%S") if self.train_type == "train" else False
-        self.project_name = "futures-alpha-7"
+        self.project_name = "futures-alpha-8"
         INTERVAL = Interval()
         self.interval = INTERVAL.ONE_SEC
         self.max_steps = max_step_by_day[self.interval]

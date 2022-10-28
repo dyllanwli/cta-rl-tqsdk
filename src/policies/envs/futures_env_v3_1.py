@@ -92,9 +92,9 @@ class FuturesEnvV3_1(gym.Env):
             # "datetime": spaces.Box(low=0, high=60, shape=(3,), dtype=np.int32),
             ### factors ###
             # "bias": spaces.Box(low=-1e10, high=1e10, shape=(1,), dtype=np.float32),
-            # "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
+            "macd_bar": spaces.Box(low=-1e10, high=1e10, shape=(self.factor_length, ), dtype=np.float32),
             # "boll": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
-            "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
+            # "kdj": spaces.Box(low=-1e10, high=1e10, shape=(3,), dtype=np.float32),
         })
         self.factors = Factors(self.observation_space, self.factor_length)
         if self.is_offline:

@@ -29,15 +29,15 @@ class EnvConfig:
         # INIT_STEP = InitOverallStep()
 
         self.data_length: Dict[str, int] = {
-            INTERVAL.ONE_SEC : 1,
-            INTERVAL.FIVE_SEC : 1,
-            INTERVAL.ONE_MIN : 1,
-            INTERVAL.FIVE_MIN : 1,
-            INTERVAL.FIFTEEN_MIN : 1,
-            INTERVAL.THIRTY_MIN : 1,
-            INTERVAL.ONE_HOUR : 1,
-            INTERVAL.FOUR_HOUR : 1,
-            INTERVAL.ONE_DAY : 1,
+            INTERVAL.ONE_SEC : 60,
+            INTERVAL.FIVE_SEC : 60,
+            INTERVAL.ONE_MIN : 60,
+            INTERVAL.FIVE_MIN : 60,
+            INTERVAL.FIFTEEN_MIN : 60,
+            INTERVAL.THIRTY_MIN : 60,
+            INTERVAL.ONE_HOUR : 60,
+            INTERVAL.FOUR_HOUR : 60,
+            INTERVAL.ONE_DAY : 60,
         }
         # subscribed interval
         self.interval: str = config["interval"]
