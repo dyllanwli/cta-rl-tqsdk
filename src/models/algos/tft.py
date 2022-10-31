@@ -16,4 +16,11 @@ from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.metrics import SMAPE, PoissonLoss, QuantileLoss
 from pytorch_forecasting.models.temporal_fusion_transformer.tuning import optimize_hyperparameters
 
-from pytorch_forecasting.data.examples import get_stallion_data
+# fix bug pytorch/30966
+import tensorflow as tf
+import tensorboard as tb
+tf.io.gfile = tb.compat.tensorflow_stub.io.gfile
+
+
+class TFTAlgos:
+    pass
