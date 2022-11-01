@@ -16,10 +16,10 @@ from .constant import EnvConfig
 
 from dao.mongo import MongoDAO
 
-def get_symbols_by_names(config: EnvConfig):
+def get_symbols_by_names(symbols):
     # get instrument symbols
     cmod = Commodity()
-    return [cmod.get_instrument_name(name) for name in config.symbols]
+    return [cmod.get_instrument_name(name) for name in symbols]
 class TargetPosTaskOffline:
     def __init__(self, commission: float = 6.0, verbose: int = 1):
         self.last_volume = 0
@@ -125,31 +125,35 @@ class SimpleTargetPosTaskOffline:
         return profit
 
 class DataLoader:
-    def __init__(self, config: EnvConfig):
-        self.config = config
-
-        self.start_dt = datetime.combine(self.config.start_dt, datetime.min.time())
-        self.end_dt = datetime.combine(self.config.end_dt , datetime.max.time())
+    def __init__(self, start_dt: datetime, end_dt: datetime, auth = None, backtest = None, init_balance = 1e6):
+        self.start_dt = datetime.combine(start_dt, datetime.min.time())
+        self.end_dt = datetime.combine(end_dt , datetime.max.time())
         self.mongo = MongoDAO()
+
+        self.auth = auth
+        self.backtest = backtest
+        self.init_balance = init_balance
 
     def get_api(self) -> TqApi:
         return self._set_account(
-            self.config.auth, self.config.backtest, self.config.init_balance)
+            self.auth, self.backtest, self.init_balance)
 
-    def get_offline_data(self, interval: str, instrument_id: str, offset: int) -> pd.DataFrame:
+    def get_offline_data(self, interval: str, instrument_id: str, offset: int, fixed_offset: bool = True, fixed_dt: bool = False) -> pd.DataFrame:
+        if fixed_dt:
+            df = self.mongo.load_bar_data(instrument_id, self.start_dt, self.end_dt, interval, limit=offset)
+            return df
         low_dt = time_to_s_timestamp(self.start_dt)
-        high_dt = time_to_s_timestamp(self.end_dt) - offset - 100
-        # print("dataloader: Loading offline data...", offset)
+        high_dt = time_to_s_timestamp(self.end_dt)
         while True:
-            sample_start = np.random.randint(low = low_dt, high = high_dt, size=1)[0]
+            sample_start = np.random.randint(low = low_dt, high = high_dt - offset - 100, size=1)[0]
             start_dt: datetime = time_to_datetime(sample_start)
             # start_dt = start_dt + timedelta(hours=7)
             # print("dataloader: Loading random offline data from ", sample_start_dt)
             try:
                 df = self.mongo.load_bar_data(
                     instrument_id, start_dt, self.end_dt, interval, limit=offset)
-                if df.shape[0] >= offset:
-                    print("dataloader: Loaded offline data from ", start_dt, "with", df.shape[0])
+                if not fixed_offset or df.shape[0] >= offset:
+                    print("dataloader: Loaded offline data from ", start_dt, "with", df.shape[0], "to", df.iloc[-1].datetime)
                     return df 
             except Exception as e:
                 print("dataloader: random offline data load failed, retrying...", e)

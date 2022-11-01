@@ -56,8 +56,8 @@ class FuturesEnvV3_1(gym.Env):
         # data config
         self.is_offline = config.is_offline
         self.max_sample_size = config.max_sample_size
-        self.dataloader = DataLoader(config)
-        self.symbol = get_symbols_by_names(config)[0]
+        self.dataloader = DataLoader(config.start_dt, config.end_dt, config.auth, config.backtest, config.init_balance)
+        self.symbol = get_symbols_by_names(config.symbols)[0]
         self.high_freq = config.high_freq
         self.max_hold_steps = config.max_hold_steps
         self.max_steps = config.max_steps

@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# figures
+figures/
+
 # checkpoints
 checkpoints/
 optuna_test/
