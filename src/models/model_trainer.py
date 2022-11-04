@@ -46,7 +46,8 @@ class ModelTrainer:
         # model.test_predict(checkpoint_path="/h/diya.li/quant/tqsdk-rl/src/lightning_logs/lightning_logs/version_0/checkpoints/epoch=26-step=2700.ckpt")
         model.test_predict(trainer)
         print("Done")
-        model.tune()
+        # model.tune()
 
         # predict with new data
         # new_data = self.get_training_data(start_dt=date(2022, 7, 1), end_dt=date(2022, 8, 1))
+        # model.predict(trainer, new_data)

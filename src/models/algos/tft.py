@@ -50,7 +50,7 @@ class TFTModel:
         return data._to_pandas()
 
     def _build_dataloader(self, data: pd.DataFrame):
-        max_prediction_length = 1
+        max_prediction_length = 2
         max_encoder_length = 60
         training_cutoff = data["time_idx"].iloc[-1] - max_prediction_length
         # variable_groups = {"time_variable": ["is_daytime"],}
@@ -161,6 +161,8 @@ class TFTModel:
 
         # show best hyperparameters
         print(study.best_trial.params)
+    def predict(self, trainer, data):
+
 
     def test_predict(self, trainer = None, checkpoint_path = None):
         # load the best model according to the validation loss
