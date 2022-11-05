@@ -1,2 +1,2 @@
-# tqsdk-rl
-reinforcement learning policy for tqsdk
+# CTA-RL-TQSDK
+Reinforcement Learning (RL) Commodity Trading Advisor (CTA) Strategy based on TQSDK
